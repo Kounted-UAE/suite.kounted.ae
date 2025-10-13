@@ -3,7 +3,7 @@
 import {
     Users, FileText, ShoppingCart, CheckSquare, Settings, PanelTopInactiveIcon, PieChart, 
      Calendar, DollarSign, Building, Receipt, BarChart3, BarChart2 , RocketIcon,
-    BookOpen, FolderOpen, Link as LinkIcon, LayoutTemplate, Briefcase, FileSpreadsheet, GitBranch
+    BookOpen, FolderOpen, Link as LinkIcon, LayoutTemplate, Briefcase, FileSpreadsheet, GitBranch, FolderKanban
   } from "lucide-react"
 
 export interface SidebarItem {
@@ -24,6 +24,13 @@ export const sidebarSections: SidebarSection[] = [
     label: "Payroll Tools",
     items: [
       { title: "Payroll Dashboard", url: "/suite/payroll", icon: FileSpreadsheet, status: "active" },       
+    ],
+    collapsible: false,
+  },
+  {
+    label: "Project Management",
+    items: [
+      { title: "Teamwork Projects", url: "/suite/teamwork-projects", icon: FolderKanban, status: "active" },
     ],
     collapsible: false,
   },
