@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { updateUserPassword } from '@/lib/supabase/auth'
 import { Container } from '@/components/react-layout/Container'
 import { RootLayout } from '@/components/react-layout/RootLayout'
@@ -14,7 +14,6 @@ import { AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
-  const params = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
