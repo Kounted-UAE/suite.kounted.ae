@@ -60,5 +60,6 @@ export const config = {
   matcher: [
     "/my-kounted/:path*",
     "/admin/:path*",
+    "/suite/:path*",
   ],
 }
