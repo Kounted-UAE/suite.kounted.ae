@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import type { Database } from "./lib/types/supabase"
 
-const PUBLIC_ROUTES = ["/", "/login", "/auth/callback"]
+const PUBLIC_ROUTES = ["/", "/login", "/auth/callback", "/auth/forgot-password", "/auth/reset-password"]
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl

@@ -161,6 +161,9 @@ export default function LoginForm() {
               </button>
             </div>
           )}
+          <div className="text-right text-xs">
+            <a href="/auth/forgot-password" className="underline text-zinc-500">Forgot password?</a>
+          </div>
         </form>
       ) : (
         <form onSubmit={handleOTPVerification} className="space-y-4 sm:space-y-5">

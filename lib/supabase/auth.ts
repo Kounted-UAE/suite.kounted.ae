@@ -31,3 +31,16 @@ export async function signInWithPassword(email: string, password: string) {
   })
   return { ...data, error }
 }
+
+export async function sendResetPasswordEmail(email: string, redirectTo?: string) {
+  const supabase = getSupabaseClient()
+  const options = redirectTo ? { redirectTo } : undefined
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+  return { ...data, error }
+}
+
+export async function updateUserPassword(newPassword: string) {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.auth.updateUser({ password: newPassword })
+  return { ...data, error }
+}

@@ -11,7 +11,11 @@ export async function GET(request: NextRequest) {
   }
 
   const cookieStore = await cookies();
-  const response = NextResponse.redirect(`${requestUrl.origin}/suite`);
+  // If the type is password recovery, route to reset-password screen
+  const type = requestUrl.searchParams.get('type')
+  const response = type === 'recovery'
+    ? NextResponse.redirect(`${requestUrl.origin}/auth/reset-password`)
+    : NextResponse.redirect(`${requestUrl.origin}/suite`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
