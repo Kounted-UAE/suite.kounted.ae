@@ -22,3 +22,12 @@ export async function verifyOTP(email: string, token: string) {
   })
   return { ...data, error }
 }
+
+export async function signInWithPassword(email: string, password: string) {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+  return { ...data, error }
+}

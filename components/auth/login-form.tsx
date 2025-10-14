@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signInWithOTP, verifyOTP } from '@/lib/supabase/auth'
+import { signInWithOTP, verifyOTP, signInWithPassword } from '@/lib/supabase/auth'
 import { Input } from '@/components/react-ui/input'
 import { Button } from '@/components/react-ui/button'
 import { Label } from '@/components/react-ui/label'
@@ -17,6 +17,8 @@ export default function LoginForm() {
   const [otpToken, setOtpToken] = useState('')
   const [showOTPInput, setShowOTPInput] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [passwordLogin, setPasswordLogin] = useState(false)
+  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -37,6 +39,19 @@ export default function LoginForm() {
     const { error: otpError } = await signInWithOTP(email)
     if (otpError) setError(otpError.message)
     else setShowOTPInput(true)
+    setLoading(false)
+  }
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    const { user, session, error } = await signInWithPassword(email, password)
+    if (error) setError(error.message)
+    else if (user && session) {
+      setSuccess('Login successful! Redirecting...')
+      setTimeout(() => router.push('/suite'), 1000)
+    }
     setLoading(false)
   }
 
@@ -86,9 +101,9 @@ export default function LoginForm() {
         </Alert>
       )}
 
-      {/* Email form or OTP form */}
+      {/* Email form (OTP or Password) or OTP entry form */}
       {!showOTPInput ? (
-        <form onSubmit={handleOTPLogin} className="space-y-4 sm:space-y-5">
+        <form onSubmit={passwordLogin ? handlePasswordLogin : handleOTPLogin} className="space-y-4 sm:space-y-5">
           <div className="space-y-1">
             <Label htmlFor="email" className="text-sm sm:text-base text-neutral-900 font-medium">
               Registered Email Address
@@ -107,17 +122,45 @@ export default function LoginForm() {
               />
             </div>
           </div>
+          {passwordLogin && (
+            <div className="space-y-1">
+              <Label htmlFor="password" className="text-sm sm:text-base text-neutral-900 font-medium">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="bg-white text-neutral-900 ring-1 ring-zinc-200 focus:ring-zinc-500"
+                required
+              />
+            </div>
+          )}
           <Button
             type="submit"
             className="w-full bg-zinc-500 hover:bg-zinc-600 text-white text-sm sm:text-base font-semibold rounded-xl shadow-sm"
             disabled={loading}
           >
-            {loading ? 'Sending OTP...' : 'Send login code'}
+            {loading ? (passwordLogin ? 'Signing in...' : 'Sending OTP...') : (passwordLogin ? 'Sign in' : 'Send login code')}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-          <p className="text-start text-xs text-zinc-400">
-            We'll email you a secure 6-digit code.
-          </p>
+          {!passwordLogin ? (
+            <div className="flex items-center justify-between text-xs text-zinc-400">
+              <p>We'll email you a secure 6-digit code.</p>
+              <button type="button" onClick={() => setPasswordLogin(true)} className="underline">
+                Use password instead
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-xs text-zinc-400">
+              <span>Use your email and password to sign in.</span>
+              <button type="button" onClick={() => setPasswordLogin(false)} className="underline">
+                Use magic code instead
+              </button>
+            </div>
+          )}
         </form>
       ) : (
         <form onSubmit={handleOTPVerification} className="space-y-4 sm:space-y-5">

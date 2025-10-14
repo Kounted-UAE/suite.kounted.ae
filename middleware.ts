@@ -13,13 +13,21 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  const res = NextResponse.next()
+
   const supabase = createServerClient<Database>(
     process.env['NEXT_PUBLIC_SUPABASE_URL']!,
 process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
     {
       cookies: {
         get(name: string) {
-          return req.cookies.get(`sb-${name}`)?.value
+          return req.cookies.get(name)?.value
+        },
+        set(name, value, options) {
+          res.cookies.set({ name, value, ...options })
+        },
+        remove(name, options) {
+          res.cookies.set({ name, value: '', ...options })
         },
       },
     }
@@ -39,6 +47,11 @@ process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
     .eq("auth_user_id", user.id)
     .maybeSingle() // changed from .single() to .maybeSingle()
 
+  // For /suite routes, allow any authenticated user
+  if (pathname.startsWith('/suite')) {
+    return res
+  }
+
   if (!profile || !profile.is_active) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
@@ -53,7 +66,7 @@ process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
     return NextResponse.redirect(new URL("/unauthorized", req.url))
   }
 
-  return NextResponse.next()
+  return res
 }
 
 export const config = {
