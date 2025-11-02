@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Button } from '@/components/react-ui/button'
 import { Checkbox } from '@/components/react-ui/checkbox'
 import { Input } from '@/components/react-ui/input'
@@ -62,6 +62,14 @@ interface PayslipFiltersAndTableProps {
   sortDir?: 'asc' | 'desc'
   onSort?: (field: string) => void
   onClearSort?: () => void
+  // Filter props
+  search?: string
+  onSearchChange?: (search: string) => void
+  selectedEmployers?: Set<string>
+  onEmployersChange?: (employers: Set<string>) => void
+  selectedDates?: Set<string>
+  onDatesChange?: (dates: Set<string>) => void
+  onFiltersChange?: () => void
 }
 
 export function PayslipFiltersAndTable({
@@ -81,13 +89,21 @@ export function PayslipFiltersAndTable({
   sortDir = 'desc',
   onSort,
   onClearSort,
+  // Filter props
+  search = '',
+  onSearchChange,
+  selectedEmployers = new Set(),
+  onEmployersChange,
+  selectedDates = new Set(),
+  onDatesChange,
+  onFiltersChange,
 }: PayslipFiltersAndTableProps) {
-  const [search, setSearch] = useState('')
-  const [selectedEmployers, setSelectedEmployers] = useState<Set<string>>(new Set())
-  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
   const [downloadProgress, setDownloadProgress] = useState<{ current: number; total: number } | null>(null)
+  const [uniqueEmployers, setUniqueEmployers] = useState<string[]>([])
+  const [uniqueDates, setUniqueDates] = useState<string[]>([])
+  const [loadingFilters, setLoadingFilters] = useState(false)
 
-  // Export selected rows to Excel (XLSX) reflecting current table columns and order
+  // Export selected rows to Excel (XLSX) with complete payroll data matching CSV structure
   const handleExportSelected = () => {
     const selectedRows = rows.filter(r => selected.has(r.batch_id))
     if (selectedRows.length === 0) {
@@ -96,60 +112,87 @@ export function PayslipFiltersAndTable({
     }
     
     try {
-      // Column order should mirror the table headers currently displayed
-      const columns: { key: keyof PayslipRow | 'payslip_link'; header: string }[] = [
-        { key: 'pay_period_to', header: 'Date' },
-        { key: 'employee_name', header: 'Employee' },
-        { key: 'payslip_link', header: 'Payslip' },
-        { key: 'employer_name', header: 'Employer' },
-        { key: 'email_id', header: 'Email' },
-        { key: 'currency', header: 'Currency' },
-        { key: 'net_salary', header: 'Net Salary' },
-        { key: 'last_sent_at', header: 'Last Sent' },
-      ]
+      // Column order matching the payroll_excel_imports_rows.csv structure
+      const data = selectedRows.map((r: any) => ({
+        employee_id: r.employee_id || '',
+        employer_id: r.employer_id || '',
+        employer_name: r.employer_name || '',
+        reviewer_email: r.reviewer_email || '',
+        employee_name: r.employee_name || '',
+        email_id: r.email_id || '',
+        employee_mol: r.employee_mol || '',
+        bank_name: r.bank_name || '',
+        iban: r.iban || '',
+        pay_period_from: r.pay_period_from || '',
+        pay_period_to: r.pay_period_to || '',
+        leave_without_pay_days: r.leave_without_pay_days ?? 0,
+        currency: r.currency || 'AED',
+        basic_salary: r.basic_salary ?? '',
+        housing_allowance: r.housing_allowance ?? '',
+        education_allowance: r.education_allowance ?? '',
+        flight_allowance: r.flight_allowance ?? '',
+        general_allowance: r.general_allowance ?? '',
+        gratuity_eosb: r.gratuity_eosb ?? '',
+        other_allowance: r.other_allowance ?? '',
+        transport_allowance: r.transport_allowance ?? '',
+        total_gross_salary: r.total_gross_salary ?? '',
+        bonus: r.bonus ?? '',
+        overtime: r.overtime ?? '',
+        salary_in_arrears: r.salary_in_arrears ?? '',
+        expenses_deductions: r.expenses_deductions ?? '',
+        other_reimbursements: r.other_reimbursements ?? '',
+        expense_reimbursements: r.expense_reimbursements ?? '',
+        total_adjustments: r.total_adjustments ?? '',
+        net_salary: r.net_salary ?? '',
+        esop_deductions: r.esop_deductions ?? '',
+        total_payment_adjustments: r.total_payment_adjustments ?? '',
+        net_payment: r.net_payment ?? '',
+      }))
 
-      const data = selectedRows.map((r) => {
-        const payslipLink = r.payslip_token
-          ? (r.payslip_url && r.payslip_url.startsWith('http')
-              ? r.payslip_url
-              : `${SUPABASE_PUBLIC_URL}/${generatePayslipFilename(r.employee_name || 'unknown', r.payslip_token)}`)
-          : ''
-        return {
-          Date: r.pay_period_to || '',
-          Employee: r.employee_name || '',
-          Payslip: payslipLink,
-          Employer: r.employer_name || '',
-          Email: r.email_id || '',
-          Currency: r.currency || '',
-          'Net Salary': r.net_salary ?? '',
-          'Last Sent': r.last_sent_at ? new Date(r.last_sent_at).toLocaleString() : 'Never',
-        }
-      })
-
-      const worksheet = XLSX.utils.json_to_sheet(data, { 
-        header: ['Date', 'Employee', 'Payslip', 'Employer', 'Email', 'Currency', 'Net Salary', 'Last Sent']
-      })
-      
-      // Set column widths for better readability
-      worksheet['!cols'] = [
-        { width: 12 }, // Date
-        { width: 20 }, // Employee
-        { width: 40 }, // Payslip
-        { width: 20 }, // Employer
-        { width: 25 }, // Email
-        { width: 8 },  // Currency
-        { width: 12 }, // Net Salary
-        { width: 20 }, // Last Sent
+      // Generate CSV content
+      const headers = [
+        'employee_id', 'employer_id', 'employer_name', 'reviewer_email', 'employee_name', 
+        'email_id', 'employee_mol', 'bank_name', 'iban', 'pay_period_from', 'pay_period_to',
+        'leave_without_pay_days', 'currency', 'basic_salary', 'housing_allowance', 
+        'education_allowance', 'flight_allowance', 'general_allowance', 'gratuity_eosb',
+        'other_allowance', 'transport_allowance', 'total_gross_salary', 'bonus', 'overtime',
+        'salary_in_arrears', 'expenses_deductions', 'other_reimbursements', 'expense_reimbursements',
+        'total_adjustments', 'net_salary', 'esop_deductions', 'total_payment_adjustments', 'net_payment'
       ]
       
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Selected Payslips')
+      // Convert data to CSV format
+      const csvRows = [headers.join(',')]
       
-      // Generate filename with timestamp
+      data.forEach(row => {
+        const values = headers.map(header => {
+          const value = row[header as keyof typeof row] || ''
+          // Escape commas and quotes in CSV values
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`
+          }
+          return value
+        })
+        csvRows.push(values.join(','))
+      })
+      
+      const csvContent = csvRows.join('\n')
+      
+      // Create and download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
       const timestamp = new Date().toISOString().split('T')[0]
-      const filename = `selected-payslips-${timestamp}.xlsx`
+      const filename = `selected-payslips-${timestamp}.csv`
       
-      XLSX.writeFile(workbook, filename)
+      // Create download link
+      const link = document.createElement('a')
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob)
+        link.setAttribute('href', url)
+        link.setAttribute('download', filename)
+        link.style.visibility = 'hidden'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
       
       toast({ 
         title: 'Export successful', 
@@ -157,7 +200,7 @@ export function PayslipFiltersAndTable({
         variant: 'default'
       })
     } catch (e: any) {
-      console.error('Excel export error:', e)
+      console.error('CSV export error:', e)
       toast({ 
         title: 'Export failed', 
         description: e?.message || 'Unknown error occurred during export', 
@@ -229,44 +272,70 @@ export function PayslipFiltersAndTable({
     toast({ title: 'Download complete', description: `Downloaded ${selectedRows.length} payslips` })
   }
 
-  // Get unique values for filters
-  const uniqueEmployers = Array.from(new Set(rows.map(row => row.employer_name).filter(Boolean)))
-  // Date options should reflect current search + employer filters (but not current date filter)
-  const dateOptionSource = rows.filter(row => {
-    const matchesSearch = !search || 
-      (row.employee_name?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
-      (row.employer_name?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
-      (row.reviewer_email?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
-      (row.email_id?.toLowerCase() ?? '').includes(search.toLowerCase())
-
-    const matchesEmployer = selectedEmployers.size === 0 || 
-      (row.employer_name && selectedEmployers.has(row.employer_name))
-
-    return matchesSearch && matchesEmployer
-  })
-  const uniqueDates = Array.from(new Set(dateOptionSource.map(row => row.pay_period_to || '').filter(Boolean)))
-
-  const filtered = useMemo(() => {
-    return rows.filter(row => {
-      // Text search filter
-      const matchesSearch = !search || 
-        (row.employee_name?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
-        (row.employer_name?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
-        (row.reviewer_email?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
-        (row.email_id?.toLowerCase() ?? '').includes(search.toLowerCase())
+  // Fetch unique values for filters from the database with contextual filtering
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      setLoadingFilters(true)
       
-      // Employer filter
-      const matchesEmployer = selectedEmployers.size === 0 || 
-        (row.employer_name && selectedEmployers.has(row.employer_name))
+      // Base params for search filter
+      const baseParams = new URLSearchParams()
+      if (search.trim()) {
+        baseParams.set('search', search.trim())
+      }
       
-      // Date filter
-      const matchesDate = selectedDates.size === 0 || 
-        ((row.pay_period_to || '') && selectedDates.has(row.pay_period_to || ''))
+      // For employers: apply current date and search filters (exclude employer filter)
+      const employerParams = new URLSearchParams(baseParams)
+      if (selectedDates.size > 0) {
+        employerParams.set('dates', Array.from(selectedDates).join(','))
+      }
+      employerParams.set('limit', '1000')
       
-      return matchesSearch && matchesEmployer && matchesDate
-    })
-  }, [rows, search, selectedEmployers, selectedDates])
+      // For dates: apply current employer and search filters (exclude date filter)
+      const datesParams = new URLSearchParams(baseParams)
+      if (selectedEmployers.size > 0) {
+        datesParams.set('employers', Array.from(selectedEmployers).join(','))
+      }
+      datesParams.set('limit', '1000')
+      
+      const [employersRes, datesRes] = await Promise.all([
+        fetch(`/api/admin/payslips/list?${employerParams.toString()}`),
+        fetch(`/api/admin/payslips/list?${datesParams.toString()}`)
+      ])
 
+      if (employersRes.ok && datesRes.ok) {
+        const [employersData, datesData] = await Promise.all([
+          employersRes.json(),
+          datesRes.json()
+        ])
+        
+        const employersSet = new Set<string>()
+        const datesSet = new Set<string>()
+        
+        employersData.rows?.forEach((row: any) => {
+          if (row.employer_name) employersSet.add(row.employer_name)
+        })
+        
+        datesData.rows?.forEach((row: any) => {
+          if (row.pay_period_to) datesSet.add(row.pay_period_to)
+        })
+        
+        setUniqueEmployers(Array.from(employersSet).sort())
+        setUniqueDates(Array.from(datesSet).sort((a, b) => b.localeCompare(a))) // Newest first
+      }
+    } catch (error) {
+      console.error('Error fetching filter options:', error)
+    } finally {
+      setLoadingFilters(false)
+    }
+  }, [search, selectedEmployers, selectedDates])
+
+  // Fetch filter options on mount and when search or filter selections change
+  useEffect(() => {
+    fetchFilterOptions()
+  }, [fetchFilterOptions])
+
+  // Use rows directly since filtering is now server-side
+  const filtered = rows
   const selectedInFiltered = useMemo(() => {
     return filtered.filter(r => selected.has(r.batch_id)).length
   }, [filtered, selected])
@@ -274,7 +343,7 @@ export function PayslipFiltersAndTable({
   // Notify parent of filtered rows changes
   useEffect(() => {
     onFilteredRowsChange?.(filtered)
-  }, [filtered]) // onFilteredRowsChange should be stable, don't include in deps
+  }, [filtered, onFilteredRowsChange])
 
   const toggleSelection = (batchId: string) => {
     const next = new Set(selected)
@@ -316,7 +385,10 @@ export function PayslipFiltersAndTable({
             type="text"
             placeholder="Search employee, employer, or email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              onSearchChange?.(e.target.value)
+              onFiltersChange?.()
+            }}
             className="w-full max-w-sm"
           />
           
@@ -335,34 +407,39 @@ export function PayslipFiltersAndTable({
               <Command>
                 <CommandInput placeholder="Search employers..." />
                 <CommandList>
-                  <CommandEmpty>No employers found.</CommandEmpty>
-                  <CommandGroup>
-                    {uniqueEmployers.map((employer) => (
+                  {loadingFilters ? (
+                    <div className="p-4 text-center text-sm text-gray-400">Loading employers...</div>
+                  ) : (
+                    <>
+                      <CommandEmpty>No employers found.</CommandEmpty>
+                      <CommandGroup>
+                        {uniqueEmployers.map((employer) => (
                       <CommandItem
                         key={employer}
                         onSelect={() => {
-                          setSelectedEmployers(prev => {
-                            const next = new Set(prev)
-                            if (next.has(employer)) {
-                              next.delete(employer)
-                            } else {
-                              next.add(employer)
-                            }
-                            return next
-                          })
+                          const next = new Set(selectedEmployers)
+                          if (next.has(employer)) {
+                            next.delete(employer)
+                          } else {
+                            next.add(employer)
+                          }
+                          onEmployersChange?.(next)
+                          onFiltersChange?.()
                         }}
                       >
                         <Checkbox
                           checked={selectedEmployers.has(employer)}
                           className="mr-2"
                         />
-                        {employer}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
+                          {employer}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </>
+                )}
+              </CommandList>
+            </Command>
+          </PopoverContent>
           </Popover>
 
           {/* Date Filter */}
@@ -380,34 +457,39 @@ export function PayslipFiltersAndTable({
               <Command>
                 <CommandInput placeholder="Search dates..." />
                 <CommandList>
-                  <CommandEmpty>No dates found.</CommandEmpty>
-                  <CommandGroup>
-                    {uniqueDates.map((date) => (
+                  {loadingFilters ? (
+                    <div className="p-4 text-center text-sm text-gray-400">Loading dates...</div>
+                  ) : (
+                    <>
+                      <CommandEmpty>No dates found.</CommandEmpty>
+                      <CommandGroup>
+                        {uniqueDates.map((date) => (
                       <CommandItem
                         key={date}
                         onSelect={() => {
-                          setSelectedDates(prev => {
-                            const next = new Set(prev)
-                            if (next.has(date)) {
-                              next.delete(date)
-                            } else {
-                              next.add(date)
-                            }
-                            return next
-                          })
+                          const next = new Set(selectedDates)
+                          if (next.has(date)) {
+                            next.delete(date)
+                          } else {
+                            next.add(date)
+                          }
+                          onDatesChange?.(next)
+                          onFiltersChange?.()
                         }}
                       >
                         <Checkbox
                           checked={selectedDates.has(date)}
                           className="mr-2"
                         />
-                        {date}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
+                          {date}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </>
+                )}
+              </CommandList>
+            </Command>
+          </PopoverContent>
           </Popover>
 
           {/* Clear Filters */}
@@ -416,9 +498,10 @@ export function PayslipFiltersAndTable({
               variant="ghost" 
               size="sm" 
               onClick={() => {
-                setSearch('')
-                setSelectedEmployers(new Set())
-                setSelectedDates(new Set())
+                onSearchChange?.('')
+                onEmployersChange?.(new Set())
+                onDatesChange?.(new Set())
+                onFiltersChange?.()
               }}
             >
               Clear All Filters
@@ -438,11 +521,10 @@ export function PayslipFiltersAndTable({
               <X 
                 className="h-3 w-3 cursor-pointer" 
                 onClick={() => {
-                  setSelectedEmployers(prev => {
-                    const next = new Set(prev)
-                    next.delete(employer)
-                    return next
-                  })
+                  const next = new Set(selectedEmployers)
+                  next.delete(employer)
+                  onEmployersChange?.(next)
+                  onFiltersChange?.()
                 }}
               />
             </Badge>
@@ -453,11 +535,10 @@ export function PayslipFiltersAndTable({
               <X 
                 className="h-3 w-3 cursor-pointer" 
                 onClick={() => {
-                  setSelectedDates(prev => {
-                    const next = new Set(prev)
-                    next.delete(date)
-                    return next
-                  })
+                  const next = new Set(selectedDates)
+                  next.delete(date)
+                  onDatesChange?.(next)
+                  onFiltersChange?.()
                 }}
               />
             </Badge>
@@ -466,7 +547,7 @@ export function PayslipFiltersAndTable({
 
         <div className="flex items-center justify-between">
           <div className="text-sm text-slate-600 font-bold">
-            Showing {filtered.length} result{filtered.length !== 1 && 's'} of {total || rows.length} total
+            Showing {rows.length} result{rows.length !== 1 && 's'} of {total} total
             {selectedInFiltered > 0 && (
               <span className="ml-2">
                 • {selectedInFiltered} selected
@@ -531,7 +612,7 @@ export function PayslipFiltersAndTable({
             onClick={handleExportSelected}
             disabled={!selected.size}
           >
-            Export Selected (Excel)
+            Export Selected (CSV)
           </Button>
           <Button
             variant="default"
@@ -603,6 +684,7 @@ export function PayslipFiltersAndTable({
             <TableHead><HeaderButton field="email_id" label="Email" /></TableHead>
             <TableHead><HeaderButton field="currency" label="Currency" /></TableHead>
             <TableHead><HeaderButton field="net_salary" label="Net Salary" /></TableHead>
+            <TableHead><HeaderButton field="net_payment" label="Net Payment" /></TableHead>
             <TableHead>Last Sent</TableHead>
           </TableRow>
         </TableHeader>
@@ -635,7 +717,8 @@ export function PayslipFiltersAndTable({
               <TableCell>{row.employer_name}</TableCell>
               <TableCell>{row.email_id}</TableCell>
               <TableCell>{row.currency}</TableCell>
-              <TableCell>{row.net_salary}</TableCell>
+              <TableCell>{(row as any).net_salary}</TableCell>
+              <TableCell>{(row as any).net_payment ?? (row as any).net_salary ?? '-'}</TableCell>
               <TableCell>
                 {row.last_sent_at ? new Date(row.last_sent_at).toLocaleString() : <span className="text-cyan-600 text-xs">Never</span>}
               </TableCell>

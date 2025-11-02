@@ -172,7 +172,25 @@
     </div>
   </div>
   
-
+  <!-- Payment Adjustments Section - Only shown if total_payment_adjustments has a value -->
+  {{#if has_payment_adjustments}}
+  <div class="section" style="padding: 12px 24px;">
+    <div class="section-title">Payment Adjustments</div>
+    <div class="box" style="margin-top: 2px;">
+      {{esop_deductions}}
+      <hr style="border: none; border-top: 1px solid #ccc; margin: 4px 0;">
+      {{total_payment_adjustments}}
+    </div>
+  </div>
+  
+  <div class="section" style="padding: 12px 24px; border-bottom: none;">
+    <div class="section-title">Final Net Payment</div>
+    <div class="box" style="margin-top: 2px; background: #f0f9ff; border-left: 4px solid #0ea5e9;">
+      {{net_payment}}
+    </div>
+  </div>
+  {{/if}}
+  
   <div class="section">
     <div class="section-title">Bank Details</div>
     <div class="grid-2">

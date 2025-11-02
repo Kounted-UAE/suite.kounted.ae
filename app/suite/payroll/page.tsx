@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { toast } from '@/hooks/use-toast'
 import { PayslipFiltersAndTable, type PayslipRow } from '@/components/payroll/PayslipFiltersAndTable'
@@ -21,16 +21,56 @@ export default function SendPayslipsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [filteredRows, setFilteredRows] = useState<PayslipRow[]>([])
   const [importOpen, setImportOpen] = useState(false)
+  
+  // Filter states
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('') // For immediate UI updates
+  const [selectedEmployers, setSelectedEmployers] = useState<Set<string>>(new Set())
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
+
+  // Simple debounce implementation
+  const searchTimeout = useRef<NodeJS.Timeout>()
+  const debouncedSetSearch = useCallback((value: string) => {
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current)
+    }
+    searchTimeout.current = setTimeout(() => {
+      setSearch(value)
+      setPage(1) // Reset to page 1 when search changes
+    }, 500)
+  }, [])
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value) // Update UI immediately
+    debouncedSetSearch(value) // Update actual search state with debounce
+  }
 
   const refreshData = useCallback(async () => {
     try {
       const offset = (page - 1) * pageSize
-      const params = new URLSearchParams({ limit: String(pageSize), offset: String(offset), sortBy, sortDir })
+      const params = new URLSearchParams({ 
+        limit: String(pageSize), 
+        offset: String(offset), 
+        sortBy, 
+        sortDir 
+      })
+      
+      // Add search and filter parameters
+      if (search.trim()) {
+        params.set('search', search.trim())
+      }
+      if (selectedEmployers.size > 0) {
+        params.set('employers', Array.from(selectedEmployers).join(','))
+      }
+      if (selectedDates.size > 0) {
+        params.set('dates', Array.from(selectedDates).join(','))
+      }
+      
       const res = await fetch(`/api/admin/payslips/list?${params.toString()}`)
       if (!res.ok) throw new Error(await res.text())
       const json = await res.json()
       const rows: PayslipRow[] = (json.rows as any[])?.map((r: any) => ({
-        batch_id: r.batch_id,
+        batch_id: r.id, // Map id to batch_id for compatibility
         employer_name: r.employer_name,
         employee_name: r.employee_name,
         reviewer_email: r.reviewer_email,
@@ -42,53 +82,23 @@ export default function SendPayslipsPage() {
         created_at: r.created_at,
         pay_period_to: r.pay_period_to,
         last_sent_at: r.last_sent_at || null,
+        // Include all additional fields for export
+        ...r
       })) ?? []
       setRows(rows)
       setTotal(Number(json.total || 0))
     } catch (e: any) {
       toast({ title: 'Error refreshing data', description: e.message, variant: 'destructive' })
     }
-  }, [page, pageSize, sortBy, sortDir])
+  }, [page, pageSize, sortBy, sortDir, search, selectedEmployers, selectedDates])
 
   const handleFilteredRowsChange = useCallback((filteredRows: PayslipRow[]) => {
     setFilteredRows(filteredRows)
   }, [])
 
   useEffect(() => {
-    const fetchServer = async (pg: number, size: number, sort: string, dir: 'asc' | 'desc') => {
-      const offset = (pg - 1) * size
-      const params = new URLSearchParams({ limit: String(size), offset: String(offset), sortBy: sort, sortDir: dir })
-      const res = await fetch(`/api/admin/payslips/list?${params.toString()}`)
-      if (!res.ok) throw new Error(await res.text())
-      const json = await res.json()
-      const rows: PayslipRow[] = (json.rows as any[])?.map((r: any) => ({
-        batch_id: r.batch_id,
-        employer_name: r.employer_name,
-        employee_name: r.employee_name,
-        reviewer_email: r.reviewer_email,
-        email_id: r.email_id,
-        net_salary: r.net_salary,
-        currency: r.currency,
-        payslip_url: r.payslip_url,
-        payslip_token: r.payslip_token,
-        created_at: r.created_at,
-        pay_period_to: r.pay_period_to,
-        last_sent_at: r.last_sent_at || null,
-      })) ?? []
-      setRows(rows)
-      setTotal(Number(json.total || 0))
-    }
-
-    const load = async () => {
-      try {
-        await fetchServer(page, pageSize, sortBy, sortDir)
-      } catch (e: any) {
-        toast({ title: 'Error loading rows', description: e.message, variant: 'destructive' })
-      }
-    }
-
-    load()
-  }, [page, pageSize, sortBy, sortDir])
+    refreshData()
+  }, [refreshData])
 
   return (
     <div className="px-6 py-6 pl-0 space-y-6">
@@ -104,34 +114,7 @@ export default function SendPayslipsPage() {
           
         </div>
       </div>
-      <PayslipCSVImportDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={() => {
-        // refresh after import
-        (async () => {
-          try {
-            const offset = (page - 1) * pageSize
-            const params = new URLSearchParams({ limit: String(pageSize), offset: String(offset), sortBy, sortDir })
-            const res = await fetch(`/api/admin/payslips/list?${params.toString()}`)
-            if (!res.ok) throw new Error(await res.text())
-            const json = await res.json()
-            const rows: PayslipRow[] = (json.rows as any[])?.map((r: any) => ({
-              batch_id: r.batch_id,
-              employer_name: r.employer_name,
-              employee_name: r.employee_name,
-              reviewer_email: r.reviewer_email,
-              email_id: r.email_id,
-              net_salary: r.net_salary,
-              currency: r.currency,
-              payslip_url: r.payslip_url,
-              payslip_token: r.payslip_token,
-              created_at: r.created_at,
-              pay_period_to: r.pay_period_to,
-              last_sent_at: r.last_sent_at || null,
-            })) ?? []
-            setRows(rows)
-            setTotal(Number(json.total || 0))
-          } catch {}
-        })()
-      }} />
+      <PayslipCSVImportDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refreshData} />
       {step === 'select' ? (
         <PayslipFiltersAndTable
           rows={rows}
@@ -158,6 +141,20 @@ export default function SendPayslipsPage() {
             setPage(1)
           }}
           onClearSort={() => { setSortBy('created_at'); setSortDir('desc'); setPage(1) }}
+          // Filter props
+          search={searchInput} // Use immediate search for UI
+          onSearchChange={handleSearchChange}
+          selectedEmployers={selectedEmployers}
+          onEmployersChange={(employers) => {
+            setSelectedEmployers(employers)
+            setPage(1)
+          }}
+          selectedDates={selectedDates}
+          onDatesChange={(dates) => {
+            setSelectedDates(dates)
+            setPage(1)
+          }}
+          onFiltersChange={() => setPage(1)} // Reset to page 1 when filters change
         />
       ) : step === 'generate' ? (
         <PayslipGenerateFlow
@@ -166,29 +163,8 @@ export default function SendPayslipsPage() {
           onBack={() => setStep('select')}
           onDone={async () => {
             setStep('select')
-            // refresh data
-            try {
-              const offset = (page - 1) * pageSize
-              const params = new URLSearchParams({ limit: String(pageSize), offset: String(offset), sortBy, sortDir })
-              const res = await fetch(`/api/admin/payslips/list?${params.toString()}`)
-              const json = await res.json()
-              const rows: PayslipRow[] = (json.rows as any[])?.map((r: any) => ({
-                batch_id: r.batch_id,
-                employer_name: r.employer_name,
-                employee_name: r.employee_name,
-                reviewer_email: r.reviewer_email,
-                email_id: r.email_id,
-                net_salary: r.net_salary,
-                currency: r.currency,
-                payslip_url: r.payslip_url,
-                payslip_token: r.payslip_token,
-                created_at: r.created_at,
-                pay_period_to: r.pay_period_to,
-                last_sent_at: r.last_sent_at || null,
-              })) ?? []
-              setRows(rows)
-              setTotal(Number(json.total || 0))
-            } catch {}
+            // Use refreshData to maintain filter state
+            refreshData()
           }}
         />
       ) : (

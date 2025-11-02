@@ -29,7 +29,10 @@ function renderHtml(template: string, row: any) {
       ? `<div class="box-line"><span>${label}</span><span>${formatMoney(value, currency)}</span></div>`
       : ''
 
-  return template
+  // Check if there are payment adjustments to show
+  const hasPaymentAdjustments = row.total_payment_adjustments && row.total_payment_adjustments !== 0
+
+  let renderedTemplate = template
     .replace('{{pay_period_from}}', row.pay_period_from || '')
     .replace('{{pay_period_to}}', row.pay_period_to || '')
     .replaceAll('{{employee_name}}', row.employee_name || '')
@@ -53,6 +56,25 @@ function renderHtml(template: string, row: any) {
     .replace('{{gratuity_eosb}}', inject('ESOP Adjustment', row.gratuity_eosb))
     .replaceAll('{{total_adjustments}}', inject('TOTAL ADJUSTMENTS', row.total_adjustments))
     .replace('{{net_salary}}', inject('NET', row.net_salary))
+    .replace('{{esop_deductions}}', inject('ESOP Deductions', row.esop_deductions))
+    .replace('{{total_payment_adjustments}}', inject('TOTAL PAYMENT ADJUSTMENTS', row.total_payment_adjustments))
+    .replace('{{net_payment}}', inject('FINAL NET PAYMENT', row.net_payment))
+
+  // Handle conditional payment adjustments section
+  if (hasPaymentAdjustments) {
+    // Remove the conditional tags and keep the content
+    renderedTemplate = renderedTemplate
+      .replace(/\{\{#if has_payment_adjustments\}\}/g, '')
+      .replace(/\{\{\/if\}\}/g, '')
+  } else {
+    // Remove the entire conditional section
+    renderedTemplate = renderedTemplate.replace(
+      /\{\{#if has_payment_adjustments\}\}[\s\S]*?\{\{\/if\}\}/g, 
+      ''
+    )
+  }
+
+  return renderedTemplate
 }
 
 async function processAllWithFallback(rows: any[], supabase: any, template: string) {
@@ -82,6 +104,9 @@ async function processAllWithFallback(rows: any[], supabase: any, template: stri
           gratuity_eosb: row.gratuity_eosb,
           total_variable_salary: row.total_adjustments,
           total_salary: row.net_salary,
+          esop_deductions: row.esop_deductions,
+          total_payment_adjustments: row.total_payment_adjustments,
+          net_payment: row.net_payment,
           currency: (row.currency || 'AED') as string
         },
         batchData: {

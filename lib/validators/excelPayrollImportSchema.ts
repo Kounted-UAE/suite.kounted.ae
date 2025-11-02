@@ -3,28 +3,33 @@
 import { z } from 'zod'
 
 export const excelPayrollImportSchema = z.object({
-  employer_name: z.string().min(1),
-  reviewer_email: z.string().email().optional().nullable(),
-
-  employee_name: z.string().min(1),
-  email_id: z.string().email().optional().nullable(),
+  // Required fields only
+  employee_id: z.string().uuid(),
+  employer_id: z.string().uuid(),
+  
+  // All other fields are optional
+  employer_name: z.string().optional().nullable(),
+  reviewer_email: z.string().optional().nullable(),
+  employee_name: z.string().optional().nullable(),
+  email_id: z.string().optional().nullable(),
   employee_mol: z.string().optional().nullable(),
   bank_name: z.string().optional().nullable(),
   iban: z.string().optional().nullable(),
 
-  pay_period_from: z.string().nullable(), // Changed from z.coerce.date()
-  pay_period_to: z.string().nullable(), // Changed from z.coerce.date()
-  leave_without_pay_days: z.number().default(0), // Changed from z.coerce.number()
-  currency: z.string().default('AED'),
+  pay_period_from: z.string().optional().nullable(),
+  pay_period_to: z.string().optional().nullable(), 
+  leave_without_pay_days: z.number().optional().nullable(),
+  currency: z.string().optional().nullable(),
 
-  basic_salary: z.number().optional().nullable(), // Changed from z.coerce.number()
+  basic_salary: z.number().optional().nullable(),
   housing_allowance: z.number().optional().nullable(),
   education_allowance: z.number().optional().nullable(),
   flight_allowance: z.number().optional().nullable(),
   general_allowance: z.number().optional().nullable(),
   gratuity_eosb: z.number().optional().nullable(),
   other_allowance: z.number().optional().nullable(),
-  total_fixed_salary: z.number().optional().nullable(),
+  transport_allowance: z.number().optional().nullable(),
+  total_gross_salary: z.number().optional().nullable(),
 
   bonus: z.number().optional().nullable(),
   overtime: z.number().optional().nullable(),
@@ -32,14 +37,27 @@ export const excelPayrollImportSchema = z.object({
   expenses_deductions: z.number().optional().nullable(),
   other_reimbursements: z.number().optional().nullable(),
   expense_reimbursements: z.number().optional().nullable(),
-  total_variable_salary: z.number().optional().nullable(),
+  total_adjustments: z.number().optional().nullable(),
 
-  total_salary: z.number().optional().nullable(),
+  net_salary: z.number().optional().nullable(),
+  
+  // NEW: ESOP fields
+  esop_deductions: z.number().optional().nullable(),
+  total_payment_adjustments: z.number().optional().nullable(),
+  net_payment: z.number().optional().nullable(),
+  
   wps_fees: z.number().optional().nullable(),
   total_to_transfer: z.number().optional().nullable(),
+  
+  // Meta fields
+  created_at: z.string().optional().nullable(),
+  payslip_url: z.string().optional().nullable(),
+  payslip_token: z.string().optional().nullable(),
 })
 
 export const EXCEL_PAYROLL_IMPORT_TEMPLATE = [
+  'employee_id',
+  'employer_id', 
   'employer_name',
   'reviewer_email',
   'employee_name',
@@ -56,17 +74,21 @@ export const EXCEL_PAYROLL_IMPORT_TEMPLATE = [
   'education_allowance',
   'flight_allowance',
   'general_allowance',
+  'gratuity_eosb',
   'other_allowance',
-  'total_fixed_salary',
+  'transport_allowance',
+  'total_gross_salary',
   'bonus',
   'overtime',
   'salary_in_arrears',
   'expenses_deductions',
   'other_reimbursements',
   'expense_reimbursements',
-  'gratuity_eosb',
-  'total_variable_salary',
-  'total_salary',
+  'total_adjustments',
+  'net_salary',
+  'esop_deductions',
+  'total_payment_adjustments', 
+  'net_payment',
   'wps_fees',
   'total_to_transfer',
 ]

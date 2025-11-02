@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     
     console.log(`Importing ${rows.length} rows...`)
 
-    // Validate required fields for each row
+    // Validate required fields for each row (only employee_id and employer_id are required)
     const validRows = rows.filter(row => {
       const hasEmployeeId = row.employee_id && String(row.employee_id).trim() !== ''
       const hasEmployerId = row.employer_id && String(row.employer_id).trim() !== ''
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     if (validRows.length === 0) {
       return NextResponse.json({ 
-        error: 'No valid rows found. Each row must have employee_id and employer_id.',
+        error: 'No valid rows found. Only employee_id and employer_id are required fields.',
         imported: 0,
         total: rows.length
       }, { status: 400 })

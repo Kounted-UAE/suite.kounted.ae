@@ -11,15 +11,29 @@ export function useTeamworkProjects(status: 'active' | 'archived' | 'all' = 'act
   return useQuery({
     queryKey: ['teamwork-projects', status],
     queryFn: async () => {
-      const params = new URLSearchParams()
-      if (status) params.set('status', status)
-      
-      const response = await fetch(`/api/teamwork/projects?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch projects')
+      try {
+        const params = new URLSearchParams()
+        if (status) params.set('status', status)
+        
+        const response = await fetch(`/api/teamwork/projects?${params.toString()}`)
+        if (!response.ok) {
+          console.error('Projects API failed:', response.status, response.statusText)
+          return []
+        }
+        const data = await response.json()
+        
+        // Check if response contains an error
+        if (data.error) {
+          console.error('Projects API returned error:', data.error)
+          return []
+        }
+        
+        // Handle various response formats from Teamwork API
+        return (data?.projects || data || []) as TeamworkProject[]
+      } catch (error) {
+        console.error('Projects fetch failed:', error)
+        return []
       }
-      const data = await response.json()
-      return data.projects as TeamworkProject[]
     },
   })
 }
@@ -28,12 +42,26 @@ export function useTeamworkCategories() {
   return useQuery({
     queryKey: ['teamwork-categories'],
     queryFn: async () => {
-      const response = await fetch('/api/teamwork/categories')
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories')
+      try {
+        const response = await fetch('/api/teamwork/categories')
+        if (!response.ok) {
+          console.error('Categories API failed:', response.status, response.statusText)
+          return []
+        }
+        const data = await response.json()
+        
+        // Check if response contains an error
+        if (data.error) {
+          console.error('Categories API returned error:', data.error)
+          return []
+        }
+        
+        // Handle various response formats from Teamwork API
+        return (data?.categories || data || []) as TeamworkCategory[]
+      } catch (error) {
+        console.error('Categories fetch failed:', error)
+        return []
       }
-      const data = await response.json()
-      return data.categories as TeamworkCategory[]
     },
   })
 }
@@ -42,12 +70,26 @@ export function useTeamworkPeople() {
   return useQuery({
     queryKey: ['teamwork-people'],
     queryFn: async () => {
-      const response = await fetch('/api/teamwork/people')
-      if (!response.ok) {
-        throw new Error('Failed to fetch people')
+      try {
+        const response = await fetch('/api/teamwork/people')
+        if (!response.ok) {
+          console.error('People API failed:', response.status, response.statusText)
+          return []
+        }
+        const data = await response.json()
+        
+        // Check if response contains an error
+        if (data.error) {
+          console.error('People API returned error:', data.error)
+          return []
+        }
+        
+        // Handle various response formats from Teamwork API
+        return (data?.people || data || []) as TeamworkPerson[]
+      } catch (error) {
+        console.error('People fetch failed:', error)
+        return []
       }
-      const data = await response.json()
-      return data.people as TeamworkPerson[]
     },
   })
 }

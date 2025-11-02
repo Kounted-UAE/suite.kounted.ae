@@ -1,9 +1,6 @@
 import { getSupabaseClient } from '@/lib/supabase/client'
-import { excelPayrollImportSchema } from '@/lib/validators/excelPayrollImportSchema'
 import { v4 as uuidv4 } from 'uuid'
 import type { Database } from '@/lib/types/supabase'
-
-type PayrollImportRow = Database['public']['Tables']['payroll_ingest_excelpayrollimport']['Insert']
 
 export async function importExcelPayroll(parsedRows: unknown[], employerId: string) {
   const supabase = getSupabaseClient()
@@ -12,21 +9,26 @@ export async function importExcelPayroll(parsedRows: unknown[], employerId: stri
 
   for (let i = 0; i < parsedRows.length; i++) {
     const row = parsedRows[i]
-    const parsed = excelPayrollImportSchema.safeParse(row)
+    
+    // Simple validation - only check required fields
+    if (!row || typeof row !== 'object') {
+      console.error(`Row ${i + 1} is not a valid object`)
+      throw new Error(`Row ${i + 1} is not a valid object`)
+    }
 
-    if (!parsed.success) {
-      const formattedErrors = parsed.error.flatten().fieldErrors
-      const errorMessages = Object.entries(formattedErrors)
-        .map(([field, messages]) => `${field}: ${messages?.join(', ')}`)
-        .join('; ')
-      console.error(`Row ${i + 1} validation failed: ${errorMessages}`)
-      throw new Error(`Row ${i + 1} failed validation: ${errorMessages}`)
+    const typedRow = row as any
+    
+    // Only validate required fields
+    if (!typedRow.employee_id || !typedRow.employer_id) {
+      console.error(`Row ${i + 1} missing required fields`)
+      throw new Error(`Row ${i + 1} missing required fields: employee_id and employer_id are required`)
     }
 
     validatedRows.push({
-      ...parsed.data,
-      batch_id: batchId,
-      employer_id: employerId,
+      ...typedRow,
+      // Ensure required fields are properly set
+      employee_id: typedRow.employee_id,
+      employer_id: typedRow.employer_id,
     })
   }
 
@@ -38,7 +40,7 @@ export async function importExcelPayroll(parsedRows: unknown[], employerId: stri
   })
   
   const { error, data } = await supabase
-    .from('payroll_ingest_excelpayrollimport')
+    .from('payroll_excel_imports')
     .insert(validatedRows)
     .select()
   

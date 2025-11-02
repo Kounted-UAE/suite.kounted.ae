@@ -1,36 +1,36 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabase/server'
+import type { IngestSortableField } from '@/lib/types/payrollIngest'
 
 export async function GET(request: Request) {
   try {
     const supabase = getSupabaseServiceClient()
-
     const { searchParams } = new URL(request.url)
+
     const limit = Number(searchParams.get('limit') || '200')
     const offset = Number(searchParams.get('offset') || '0')
-    const sortBy = searchParams.get('sortBy') || ''
+    const sortBy = (searchParams.get('sortBy') || 'created_at') as IngestSortableField
     const sortDir = (searchParams.get('sortDir') || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc'
     const search = (searchParams.get('search') || '').trim()
     const employersCsv = (searchParams.get('employers') || '').trim()
-    const datesCsv = (searchParams.get('dates') || '').trim()
     const currencyCsv = (searchParams.get('currency') || '').trim()
+    const from = searchParams.get('from')
+    const to = searchParams.get('to')
 
     const fromIdx = offset
     const toIdx = offset + limit - 1
 
-    // Whitelist sortable columns to avoid SQL injection
     const sortable: Record<string, true> = {
       created_at: true,
       pay_period_to: true,
       employer_name: true,
       employee_name: true,
-      reviewer_email: true,
-      email_id: true,
       currency: true,
       net_salary: true,
       esop_deductions: true,
       total_payment_adjustments: true,
       net_payment: true,
+      total_to_transfer: true,
     }
 
     let query = supabase
@@ -40,13 +40,14 @@ export async function GET(request: Request) {
 
     // Filters
     if (search) {
-      // OR search across text columns
+      // OR search across a few text columns
       query = query.or(
         [
           `employee_name.ilike.%${search}%`,
           `employer_name.ilike.%${search}%`,
           `reviewer_email.ilike.%${search}%`,
           `email_id.ilike.%${search}%`,
+          `iban.ilike.%${search}%`,
         ].join(',')
       )
     }
@@ -58,18 +59,18 @@ export async function GET(request: Request) {
       }
     }
 
-    if (datesCsv) {
-      const dates = datesCsv.split(',').map(s => s.trim()).filter(Boolean)
-      if (dates.length) {
-        query = query.in('pay_period_to', dates)
-      }
-    }
-
     if (currencyCsv) {
       const currencies = currencyCsv.split(',').map(s => s.trim()).filter(Boolean)
       if (currencies.length) {
         query = query.in('currency', currencies)
       }
+    }
+
+    if (from) {
+      query = query.gte('pay_period_from', from)
+    }
+    if (to) {
+      query = query.lte('pay_period_to', to)
     }
 
     if (sortBy && sortable[sortBy]) {
@@ -84,38 +85,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Map id to batch_id for backward compatibility with frontend
-    const rowsWithBatchId = (data || []).map((r: any) => ({ 
-      ...r, 
-      batch_id: r.id  // Map id to batch_id for frontend compatibility
-    }))
-
-    // Attach last_sent_at from events table (best-effort)
-    let lastSentMap: Record<string, string> = {}
-    try {
-      const ids = (data || []).map((r: any) => r.id).filter(Boolean)
-      if (ids.length > 0) {
-        const { data: events, error: eventsError } = await supabase
-          .from('payroll_payslip_send_events')
-          .select('batch_id, created_at')
-          .in('batch_id', ids)
-          .order('created_at', { ascending: false })
-
-        if (!eventsError && Array.isArray(events)) {
-          for (const e of events) {
-            if (!lastSentMap[e.batch_id]) {
-              lastSentMap[e.batch_id] = e.created_at
-            }
-          }
-        }
-      }
-    } catch {}
-
-    const rowsWithLast = rowsWithBatchId.map((r: any) => ({ ...r, last_sent_at: lastSentMap[r.id] || null }))
-
-    return NextResponse.json({ rows: rowsWithLast, total: count ?? 0 })
-  } catch (error) {
-    console.error('Error in payslips list API:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ rows: data || [], total: count ?? 0 })
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 })
   }
 }
+
+

@@ -24,6 +24,9 @@ interface EmployeeData {
   expense_reimbursements?: number
   total_variable_salary?: number
   total_salary?: number
+  esop_deductions?: number
+  total_payment_adjustments?: number
+  net_payment?: number
   wps_fees?: number
   total_to_transfer?: number
   currency?: string

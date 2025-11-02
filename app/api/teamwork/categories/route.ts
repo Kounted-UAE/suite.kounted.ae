@@ -17,6 +17,9 @@ export async function GET(req: NextRequest) {
     const api = getTeamworkProjectsAPI()
     const result = await api.getCategories()
 
+    console.log('Categories API result:', result)
+    console.log('Categories count:', result?.categories?.length || 0)
+
     return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching categories:', error)
