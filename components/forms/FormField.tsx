@@ -52,6 +52,7 @@ export function TextField({ label, name, value = '', onChange, required, descrip
         onChange={(e) => onChange(name, e.target.value)}
         placeholder={placeholder}
         required={required}
+        className="bg-white"
       />
       {description && <p className="text-xs text-zinc-400">{description}</p>}
     </div>
@@ -70,12 +71,12 @@ export function SelectField({ label, name, value = '', onChange, required, descr
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
       <Select value={value} onValueChange={(val) => onChange(name, val)}>
-        <SelectTrigger>
+        <SelectTrigger className="bg-white">
           <SelectValue placeholder={placeholder || `Select ${label.toLowerCase()}`} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-white">
           {normalizedOptions.map(option => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem key={option.value} value={option.value} className="bg-white hover:bg-gray-50">
               {option.label}
             </SelectItem>
           ))}
@@ -100,6 +101,7 @@ export function TextareaField({ label, name, value = '', onChange, required, des
         placeholder={placeholder}
         rows={rows}
         required={required}
+        className="bg-white"
       />
       {description && <p className="text-xs text-zinc-400">{description}</p>}
     </div>

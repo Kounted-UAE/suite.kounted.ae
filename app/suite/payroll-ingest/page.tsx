@@ -6,6 +6,7 @@ import type { IngestRow, IngestSortableField } from '@/lib/types/payrollIngest'
 import { Button } from '@/components/react-ui/button'
 import { Input } from '@/components/react-ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/react-ui/select'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/react-ui/card'
 import { toast } from '@/hooks/use-toast'
 import * as XLSX from 'xlsx'
 
@@ -96,13 +97,22 @@ export default function PayrollIngestPage() {
   }, [rows, visibleColumns])
 
   return (
-    <div className="px-6 py-6 pl-0 space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-lg text-zinc-600 font-bold">Payroll Ingest</h1>
-        <div className="flex items-center gap-2">
-          <Button onClick={handleExport}>Export</Button>
-        </div>
-      </div>
+    <div className="container mx-auto py-8 space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Payroll Ingest</CardTitle>
+              <CardDescription>
+                View and manage imported payroll data. Search, filter, and export payroll records for processing.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleExport}>Export</Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
       <div className="flex items-center gap-2 flex-wrap">
         <Input className="w-full max-w-xs" placeholder="Search employee, employer, email, IBAN..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />

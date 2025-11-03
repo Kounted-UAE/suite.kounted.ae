@@ -3,7 +3,22 @@
 import { useState } from 'react'
 import { Button } from '@/components/react-ui/button'
 import { toast } from '@/hooks/use-toast'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/react-ui/dialog'
+import { Badge } from '@/components/react-ui/badge'
+import { AlertTriangle, CheckCircle, X } from 'lucide-react'
 import type { PayslipRow } from './PayslipFiltersAndTable'
+
+interface ValidationResult {
+  batch_id: string
+  employee_id: string
+  employer_id: string
+  employee_name: string
+  employer_name: string
+  isValid: boolean
+  issue?: string
+  actualEmployeeName?: string
+  actualEmployerName?: string
+}
 
 interface Props {
   rows: PayslipRow[]
@@ -14,12 +29,65 @@ interface Props {
 
 export default function PayslipGenerateFlow({ rows, selected, onBack, onDone }: Props) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isValidating, setIsValidating] = useState(false)
   const [progress, setProgress] = useState<{ current: number; total: number; status: string } | null>(null)
   const [results, setResults] = useState<{ success: number; failed: number; errors: string[] }>({ success: 0, failed: 0, errors: [] })
+  const [validationResults, setValidationResults] = useState<{ valid: ValidationResult[]; invalid: ValidationResult[] } | null>(null)
+  const [showValidationDialog, setShowValidationDialog] = useState(false)
 
-  const handleGenerate = async () => {
+  const validateEmployeeCombinations = async () => {
+    const selectedRows = rows.filter(r => selected.has(r.batch_id))
+    if (selectedRows.length === 0) return { valid: [], invalid: [] }
+
+    setIsValidating(true)
+    try {
+      const combinations = selectedRows.map(row => ({
+        batch_id: row.batch_id,
+        employee_id: row.employee_id,
+        employer_id: row.employer_id,
+        employee_name: row.employee_name,
+        employer_name: row.employer_name
+      }))
+
+      const response = await fetch('/api/admin/payslips/validate-employees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ combinations })
+      })
+
+      if (!response.ok) {
+        throw new Error('Validation request failed')
+      }
+
+      const result = await response.json()
+      setValidationResults(result)
+      return result
+
+    } catch (error) {
+      toast({
+        title: 'Validation Error',
+        description: error instanceof Error ? error.message : 'Failed to validate employee combinations',
+        variant: 'destructive'
+      })
+      return { valid: [], invalid: [] }
+    } finally {
+      setIsValidating(false)
+    }
+  }
+
+  const handleGenerate = async (skipValidation = false) => {
     const batchIds = rows.filter(r => selected.has(r.batch_id)).map(r => r.batch_id)
     if (batchIds.length === 0) return
+
+    // Validate employee-employer combinations first (unless skipping)
+    if (!skipValidation) {
+      const validation = await validateEmployeeCombinations()
+      
+      if (validation.invalid && validation.invalid.length > 0) {
+        setShowValidationDialog(true)
+        return // Stop here and show validation dialog
+      }
+    }
     
     setIsLoading(true)
     setProgress({ current: 0, total: batchIds.length, status: 'Starting generation...' })
@@ -128,7 +196,7 @@ export default function PayslipGenerateFlow({ rows, selected, onBack, onDone }: 
       <p className="text-cyan-600 text-sm">Generate payslips for <strong>{selected.size}</strong> selected employees.</p>
       
       <div className="flex gap-2">
-        <Button onClick={handleGenerate} disabled={isLoading}>
+        <Button onClick={() => handleGenerate()} disabled={isLoading || isValidating}>
           {isLoading ? (
             <>
               <svg className="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -137,11 +205,19 @@ export default function PayslipGenerateFlow({ rows, selected, onBack, onDone }: 
               </svg>
               Generating…
             </>
+          ) : isValidating ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Validating…
+            </>
           ) : (
             'Generate Now'
           )}
         </Button>
-        <Button variant="ghost" onClick={onBack} disabled={isLoading}>Back</Button>
+        <Button variant="ghost" onClick={onBack} disabled={isLoading || isValidating}>Back</Button>
       </div>
 
       {/* Progress indicator */}
@@ -198,6 +274,104 @@ export default function PayslipGenerateFlow({ rows, selected, onBack, onDone }: 
           )}
         </div>
       )}
+
+      {/* Validation Warning Dialog */}
+      <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <DialogContent className="max-w-4xl bg-white max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Employee-Employer Validation Warning
+            </DialogTitle>
+            <DialogDescription>
+              Some payroll records have employee-employer combinations that don't exist in the employees table. 
+              This may indicate data inconsistencies.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {validationResults && (
+              <>
+                {/* Summary */}
+                <div className="flex gap-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium">
+                      {validationResults.valid.length} Valid
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-medium">
+                      {validationResults.invalid.length} Invalid
+                    </span>
+                  </div>
+                </div>
+
+                {/* Invalid Records */}
+                {validationResults.invalid.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-red-900 flex items-center gap-2">
+                      <X className="h-4 w-4" />
+                      Records with Issues:
+                    </h4>
+                    <div className="max-h-60 overflow-y-auto border border-red-200 rounded-md">
+                      <div className="divide-y divide-red-100">
+                        {validationResults.invalid.map((record, idx) => (
+                          <div key={idx} className="p-3 bg-red-50">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-medium text-red-900">{record.employee_name}</p>
+                                <p className="text-sm text-red-700">{record.employer_name}</p>
+                                <p className="text-xs text-red-600 mt-1">{record.issue}</p>
+                              </div>
+                              <Badge variant="destructive" className="text-xs">
+                                Invalid
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Valid Records */}
+                {validationResults.valid.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-green-900 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Valid Records ({validationResults.valid.length}):
+                    </h4>
+                    <div className="text-sm text-green-700">
+                      These records have matching employee-employer combinations in the employees table.
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowValidationDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="default"
+              onClick={() => {
+                setShowValidationDialog(false)
+                handleGenerate(true) // Skip validation on second attempt
+              }}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              Proceed Anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

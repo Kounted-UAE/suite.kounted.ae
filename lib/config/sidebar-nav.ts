@@ -23,9 +23,9 @@ export const sidebarSections: SidebarSection[] = [
   {
     label: "Payroll Tools",
     items: [
-      { title: "Payroll Dashboard", url: "/suite/payroll", icon: FileSpreadsheet, status: "active" },
-      { title: "Payroll Ingest", url: "/suite/payroll-ingest", icon: FileSpreadsheet, status: "active" },
-      { title: "Pay Period Management", url: "/suite/admin/pay-period-management", icon: Archive, status: "active" },       
+      { title: "Payroll Processing", url: "/suite/payroll", icon: FileSpreadsheet, status: "active" },
+      { title: "Payroll Objects", url: "/suite/entity-management", icon: Users, status: "active" },
+      { title: "Payroll Pay Periods", url: "/suite/admin/pay-period-management", icon: Archive, status: "active" },       
     ],
     collapsible: false,
   },

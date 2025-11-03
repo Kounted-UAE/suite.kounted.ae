@@ -33,13 +33,15 @@ export default function PayPeriodManagementPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Pay Period Management</h1>
-        <p className="text-muted-foreground">
-          Manage active pay periods and close completed periods for historical storage.
-        </p>
-      </div>
+    <div className="container mx-auto py-8 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Pay Period Management</CardTitle>
+          <CardDescription>
+            Manage active pay periods and close completed periods for historical storage.
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Close Pay Periods Card */}

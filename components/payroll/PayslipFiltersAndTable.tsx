@@ -32,6 +32,8 @@ const SUPABASE_PUBLIC_URL = 'https://tyznabdlwpgldgxktlzo.supabase.co/storage/v1
 
 export type PayslipRow = {
   batch_id: string
+  employee_id: string
+  employer_id: string
   employee_name: string
   employer_name: string
   reviewer_email: string

@@ -9,6 +9,7 @@ import { PayslipFiltersAndTable, type PayslipRow } from '@/components/payroll/Pa
 import { PayslipEmailFlow } from '@/components/payroll/PayslipEmailFlow'
 import PayslipGenerateFlow from '@/components/payroll/PayslipGenerateFlow'
 import PayslipCSVImportDialog from '@/components/payroll/PayslipCSVImportDialog'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/react-ui/card'
 
 export default function SendPayslipsPage() {
   const [rows, setRows] = useState<PayslipRow[]>([])
@@ -101,20 +102,27 @@ export default function SendPayslipsPage() {
   }, [refreshData])
 
   return (
-    <div className="px-6 py-6 pl-0 space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg text-zinc-600 font-bold">Send Payslips</h1>
-        <div className="flex items-center gap-2">
-          <button
-            className="text-white text-sm bg-neutral-700 px-3 py-2 rounded-md shadow-xs hover:opacity-90"
-            onClick={() => setImportOpen(true)}
-          >
-            Import Rows
-          </button>
-          
-        </div>
-      </div>
-      <PayslipCSVImportDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refreshData} />
+    <div className="container mx-auto py-8 space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Send Payslips</CardTitle>
+              <CardDescription>
+                Generate payslips, send emails to employees, and manage payroll distribution for all employers.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="text-white text-sm bg-neutral-700 px-3 py-2 rounded-md shadow-xs hover:opacity-90"
+                onClick={() => setImportOpen(true)}
+              >
+                Import Rows
+              </button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
       {step === 'select' ? (
         <PayslipFiltersAndTable
           rows={rows}
@@ -175,6 +183,12 @@ export default function SendPayslipsPage() {
           onRefresh={refreshData}
         />
       )}
+      
+      <PayslipCSVImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onSuccess={refreshData}
+      />
     </div>
   )
 }
