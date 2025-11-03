@@ -112,6 +112,6 @@ local.image.assets/
 + /local.image.assets/
 + .eslintrc.js         # Specific ESLint config ignored in legacy, missing in cleaned
 + *.mergeBackup        # Git conflict file
-generate-payslips.mjs
-payslip-template.html
+# generate-payslips.mjs  # Standalone script - can remain ignored
+# payslip-template.html  # REMOVED - needed for live payslip generation
 .vercel

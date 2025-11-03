@@ -136,10 +136,15 @@ async function processAllWithFallback(rows: any[], supabase: any, template: stri
       }
 
       // Update database with payslip info
+      const { data: publicUrlData } = supabase.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(storagePath)
+
       const { error: updateError } = await supabase
         .from('payroll_excel_imports')
         .update({
           payslip_filename: filename,
+          payslip_url: publicUrlData?.publicUrl,
           payslip_token: token,
           payslip_generated_at: new Date().toISOString(),
           payslip_generation_method: 'fallback'
