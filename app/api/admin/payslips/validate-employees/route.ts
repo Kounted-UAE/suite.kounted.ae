@@ -18,27 +18,61 @@ export async function POST(request: Request) {
     // Get all valid employee-employer combinations from employees table
     const { data: validEmployees, error: employeesError } = await supabase
       .from('employees')
-      .select('id, employer_id, name, employer:employers(name)')
+      .select('id, employer_id, name')
 
     if (employeesError) {
       return NextResponse.json({ error: employeesError.message }, { status: 500 })
     }
 
-    // Create a Set of valid combinations for fast lookup
+    // Type guard and normalization
+    const normalizeUUID = (uuid: string | null | undefined): string => {
+      if (!uuid) return ''
+      return String(uuid).trim().toLowerCase()
+    }
+
+    // Ensure validEmployees is an array and has the expected structure
+    const employeesList = Array.isArray(validEmployees) ? validEmployees : []
+    
+    // Create a Set of valid combinations for fast lookup (normalized)
     const validCombinations = new Set(
-      (validEmployees || []).map(emp => `${emp.id}:${emp.employer_id}`)
+      employeesList.map((emp: any) => 
+        `${normalizeUUID(emp.id)}:${normalizeUUID(emp.employer_id)}`
+      )
     )
+
+    // Debug: Log some sample valid combinations for troubleshooting
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Valid employee-employer combinations (first 5):', 
+        Array.from(validCombinations).slice(0, 5))
+    }
 
     // Check each combination
     const validationResults = combinations.map(combo => {
       const { employee_id, employer_id, employee_name, employer_name, batch_id } = combo
-      const combinationKey = `${employee_id}:${employer_id}`
+      const normalizedEmployeeId = normalizeUUID(employee_id)
+      const normalizedEmployerId = normalizeUUID(employer_id)
+      const combinationKey = `${normalizedEmployeeId}:${normalizedEmployerId}`
       const isValid = validCombinations.has(combinationKey)
 
+      // Debug logging for invalid combinations
+      if (!isValid && process.env.NODE_ENV === 'development') {
+        console.log(`Invalid combination - batch_id: ${batch_id}, employee_id: ${employee_id}, employer_id: ${employer_id}, normalized: ${combinationKey}`)
+        // Check if employee_id exists at all
+        const employeeExists = employeesList.some((emp: any) => 
+          normalizeUUID(emp.id) === normalizedEmployeeId
+        )
+        // Check if employer_id exists for any employee
+        const employerExists = employeesList.some((emp: any) => 
+          normalizeUUID(emp.employer_id) === normalizedEmployerId
+        )
+        console.log(`  - Employee ID exists: ${employeeExists}, Employer ID exists: ${employerExists}`)
+      }
+
       if (isValid) {
-        // Find the employee record to get the actual name from employees table
-        const employeeRecord = validEmployees.find(emp => 
-          emp.id === employee_id && emp.employer_id === employer_id
+        // Find the employee record to get the actual name from employees table (using normalized comparison)
+        const employeeRecord = employeesList.find((emp: any) => 
+          normalizeUUID(emp.id) === normalizedEmployeeId && 
+          normalizeUUID(emp.employer_id) === normalizedEmployerId
         )
         
         return {
@@ -48,10 +82,34 @@ export async function POST(request: Request) {
           employee_name,
           employer_name,
           isValid: true,
-          actualEmployeeName: employeeRecord?.name,
-          actualEmployerName: employeeRecord?.employer?.name
+          actualEmployeeName: (employeeRecord as any)?.name
         }
       } else {
+        // Provide detailed error message
+        const employeeExists = employeesList.some((emp: any) => 
+          normalizeUUID(emp.id) === normalizedEmployeeId
+        )
+        const employerExists = employeesList.some((emp: any) => 
+          normalizeUUID(emp.employer_id) === normalizedEmployerId
+        )
+        
+        let issueMessage = 'Employee-employer combination not found in employees table'
+        if (!employeeExists && !employerExists) {
+          issueMessage = `Employee ID (${employee_id}) and Employer ID (${employer_id}) not found`
+        } else if (!employeeExists) {
+          issueMessage = `Employee ID (${employee_id}) not found in employees table`
+        } else if (!employerExists) {
+          issueMessage = `Employer ID (${employer_id}) not found for any employee`
+        } else {
+          // Both exist but not together - check if employee has different employer
+          const employeeWithDifferentEmployer = employeesList.find((emp: any) => 
+            normalizeUUID(emp.id) === normalizedEmployeeId
+          )
+          if (employeeWithDifferentEmployer) {
+            issueMessage = `Employee ID (${employee_id}) exists but is associated with different employer ID (${(employeeWithDifferentEmployer as any).employer_id})`
+          }
+        }
+        
         return {
           batch_id,
           employee_id,
@@ -59,7 +117,7 @@ export async function POST(request: Request) {
           employee_name,
           employer_name,
           isValid: false,
-          issue: 'Employee-employer combination not found in employees table'
+          issue: issueMessage
         }
       }
     })
