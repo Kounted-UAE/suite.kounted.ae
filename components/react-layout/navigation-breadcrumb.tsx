@@ -30,36 +30,30 @@ export function NavigationBreadcrumb() {
   }
 
   const breadcrumbs: BreadcrumbItem[] = dashboardSegments.map((segment, idx) => {
-    const href = "/suite/" + dashboardSegments.slice(0, idx + 1).join("/")
+    const href = "/" + dashboardSegments.slice(0, idx + 1).join("/")
     return { name: getBreadcrumbName(segment, href), href }
   })
 
   return (
     <div className="text-lowercase text-xs flex items-center gap-3">
       <nav className="flex items-center gap-2" aria-label="Breadcrumb">
-        {dashboardSegments.length === 0 ? (
-          <span className="text-zinc-100 font-semibold">Payroll Dashboard</span>
+        {breadcrumbs.length === 0 ? (
+          <span className="text-black font-semibold">Home</span>
         ) : (
-          <>
-            <Link href="/suite/payroll" className="text-zinc-100 hover:underline font-bold">
-              Payroll Dashboard
-            </Link>
-            <span className="text-zinc-400 font-normal">/</span>
-            {breadcrumbs.map((crumb, idx) => (
-              <span key={crumb.href} className="flex items-center gap-2">
-                {idx < breadcrumbs.length - 1 ? (
-                  <>
-                    <Link href={crumb.href} className="text-zinc-400 hover:underline font-medium">
-                      {crumb.name}
-                    </Link>
-                    <span className="text-zinc-400">/</span>
-                  </>
-                ) : (
-                  <span className="text-zinc-300 font-semibold">{crumb.name}</span>
-                )}
-              </span>
-            ))}
-          </>
+          breadcrumbs.map((crumb, idx) => (
+            <span key={crumb.href} className="flex items-center gap-2">
+              {idx < breadcrumbs.length - 1 ? (
+                <>
+                  <Link href={crumb.href} className="text-black hover:underline font-medium">
+                    {crumb.name}
+                  </Link>
+                  <span className="text-black">/</span>
+                </>
+              ) : (
+                <span className="text-green-600 font-semibold">{crumb.name}</span>
+              )}
+            </span>
+          ))
         )}
       </nav>
     </div>

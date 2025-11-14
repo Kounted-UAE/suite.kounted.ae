@@ -19,6 +19,7 @@ interface EmployeeData {
   bonus?: number
   overtime?: number
   salary_in_arrears?: number
+  unutilised_leave_days_payment?: number
   expenses_deductions?: number
   other_reimbursements?: number
   expense_reimbursements?: number
@@ -208,10 +209,11 @@ export async function generatePayslipPDF({
     { label: 'Bonus', value: employee.bonus },
     { label: 'Overtime', value: employee.overtime },
     { label: 'Salary in Arrears', value: employee.salary_in_arrears },
+    { label: 'Gratuity/EOSB', value: employee.gratuity_eosb },
+    { label: 'Unutilised Leave Days Payment', value: employee.unutilised_leave_days_payment },
     { label: 'Adhoc Expenses', value: employee.expenses_deductions },
     { label: 'School Reimbursements', value: employee.other_reimbursements },
-    { label: 'Internet Reimbursements', value: employee.expense_reimbursements },
-    { label: 'Gratuity/EOSB', value: employee.gratuity_eosb }
+    { label: 'Internet Reimbursements', value: employee.expense_reimbursements }
   ]
 
   page.drawText('Variable Salary Components:', {

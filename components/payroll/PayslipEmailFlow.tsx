@@ -87,20 +87,54 @@ export function PayslipEmailFlow({
         })
 
         if (res.ok) {
-          successLog.push(`${row.employee_name} → ${toList.join(', ')}`)
+          try {
+            const data = await res.json()
+            const resendEmailId = data.resendEmailId
+            
+            if (!resendEmailId) {
+              // Warning: Email accepted but Resend ID not returned
+              const warningMsg = data.warning || 'Email accepted but Resend ID not returned - may not appear in Resend logs'
+              successLog.push(`${row.employee_name} → ${toList.join(', ')} ⚠️`)
+              toast({
+                title: `Sent (with warning): ${row.employee_name}`,
+                description: warningMsg,
+                variant: 'default',
+              })
+            } else {
+              successLog.push(`${row.employee_name} → ${toList.join(', ')}`)
+            }
+          } catch (parseError) {
+            // Response is OK but not JSON - still count as success
+            successLog.push(`${row.employee_name} → ${toList.join(', ')}`)
+          }
         } else {
-          const msg = await res.text()
-          errorLog.push(`${row.employee_name} → ${toList.join(', ')}: ${msg}`)
+          // Try to parse error response
+          let errorMsg = 'Unknown error'
+          try {
+            const errorData = await res.json()
+            errorMsg = errorData.error || errorData.message || `HTTP ${res.status}`
+            if (errorData.details) {
+              errorMsg += `: ${JSON.stringify(errorData.details)}`
+            }
+          } catch {
+            errorMsg = await res.text() || `HTTP ${res.status}`
+          }
+          
+          errorLog.push(`${row.employee_name} → ${toList.join(', ')}: ${errorMsg}`)
           toast({
             title: `Failed to send: ${row.employee_name}`,
-            description: msg,
+            description: errorMsg,
             variant: 'destructive',
           })
         }
       } catch (e: any) {
         const msg = e?.message || 'Network error'
         errorLog.push(`${row.employee_name} → ${toList.join(', ')}: ${msg}`)
-        toast({ title: `Failed to send: ${row.employee_name}`, description: msg, variant: 'destructive' })
+        toast({ 
+          title: `Failed to send: ${row.employee_name}`, 
+          description: msg, 
+          variant: 'destructive' 
+        })
       }
     }
 

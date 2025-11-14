@@ -9,7 +9,8 @@ import { PayslipFiltersAndTable, type PayslipRow } from '@/components/payroll/Pa
 import { PayslipEmailFlow } from '@/components/payroll/PayslipEmailFlow'
 import PayslipGenerateFlow from '@/components/payroll/PayslipGenerateFlow'
 import PayslipCSVImportDialog from '@/components/payroll/PayslipCSVImportDialog'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/react-ui/card'
+import { Button } from '@/components/react-ui/button'
+import { PageHeader } from '@/components/react-layout/PageHeader'
 
 export default function SendPayslipsPage() {
   const [rows, setRows] = useState<PayslipRow[]>([])
@@ -17,7 +18,7 @@ export default function SendPayslipsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [step, setStep] = useState<'select' | 'generate' | 'review'>('select')
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(200)
+  const [pageSize] = useState(200) // Fixed at 200, no longer changeable
   const [sortBy, setSortBy] = useState<string>('created_at')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [filteredRows, setFilteredRows] = useState<PayslipRow[]>([])
@@ -28,6 +29,7 @@ export default function SendPayslipsPage() {
   const [searchInput, setSearchInput] = useState('') // For immediate UI updates
   const [selectedEmployers, setSelectedEmployers] = useState<Set<string>>(new Set())
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
+  const [showDeleted, setShowDeleted] = useState(false)
 
   // Simple debounce implementation
   const searchTimeout = useRef<NodeJS.Timeout>()
@@ -66,6 +68,9 @@ export default function SendPayslipsPage() {
       if (selectedDates.size > 0) {
         params.set('dates', Array.from(selectedDates).join(','))
       }
+      if (showDeleted) {
+        params.set('includeDeleted', 'true')
+      }
       
       const res = await fetch(`/api/admin/payslips/list?${params.toString()}`)
       if (!res.ok) throw new Error(await res.text())
@@ -91,7 +96,7 @@ export default function SendPayslipsPage() {
     } catch (e: any) {
       toast({ title: 'Error refreshing data', description: e.message, variant: 'destructive' })
     }
-  }, [page, pageSize, sortBy, sortDir, search, selectedEmployers, selectedDates])
+  }, [page, pageSize, sortBy, sortDir, search, selectedEmployers, selectedDates, showDeleted])
 
   const handleFilteredRowsChange = useCallback((filteredRows: PayslipRow[]) => {
     setFilteredRows(filteredRows)
@@ -102,27 +107,26 @@ export default function SendPayslipsPage() {
   }, [refreshData])
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Send Payslips</CardTitle>
-              <CardDescription>
-                Generate payslips, send emails to employees, and manage payroll distribution for all employers.
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                className="text-white text-sm bg-neutral-700 px-3 py-2 rounded-md shadow-xs hover:opacity-90"
-                onClick={() => setImportOpen(true)}
-              >
-                Import Rows
-              </button>
-            </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Send Payslips"
+        description="Generate payslips, send emails to employees, and manage payroll distribution for all employers."
+        breadcrumbs="Payroll Suite"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button 
+              size="sm" 
+              variant={showDeleted ? "default" : "outline"}
+              onClick={() => setShowDeleted(!showDeleted)}
+            >
+              {showDeleted ? "Show Active" : "Show Deleted"}
+            </Button>
+            <Button size="sm" onClick={() => setImportOpen(true)}>
+              Import Rows
+            </Button>
           </div>
-        </CardHeader>
-      </Card>
+        }
+      />
       {step === 'select' ? (
         <PayslipFiltersAndTable
           rows={rows}
@@ -136,7 +140,6 @@ export default function SendPayslipsPage() {
           page={page}
           pageSize={pageSize}
           onPageChange={setPage}
-          onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           sortBy={sortBy}
           sortDir={sortDir}
           onSort={(field) => {
@@ -163,6 +166,7 @@ export default function SendPayslipsPage() {
             setPage(1)
           }}
           onFiltersChange={() => setPage(1)} // Reset to page 1 when filters change
+          showDeleted={showDeleted}
         />
       ) : step === 'generate' ? (
         <PayslipGenerateFlow

@@ -27,6 +27,17 @@ import * as XLSX from 'xlsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/react-ui/select'
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious, PaginationLink } from '@/components/react-ui/pagination'
 import { generatePayslipFilename, extractTokenFromFilename } from '@/lib/utils/pdf/payslipNaming'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/react-ui/alert-dialog'
+import { ToastAction } from '@/components/react-ui/toast'
 
 const SUPABASE_PUBLIC_URL = 'https://tyznabdlwpgldgxktlzo.supabase.co/storage/v1/object/public/Payroll'
 
@@ -45,6 +56,9 @@ export type PayslipRow = {
   created_at: string
   pay_period_to: string | null
   last_sent_at?: string | null
+  delivery_status?: string | null
+  delivery_status_updated_at?: string | null
+  resend_email_id?: string | null
 }
 
 interface PayslipFiltersAndTableProps {
@@ -59,7 +73,6 @@ interface PayslipFiltersAndTableProps {
   page?: number
   pageSize?: number
   onPageChange?: (page: number) => void
-  onPageSizeChange?: (size: number) => void
   sortBy?: string
   sortDir?: 'asc' | 'desc'
   onSort?: (field: string) => void
@@ -72,6 +85,7 @@ interface PayslipFiltersAndTableProps {
   selectedDates?: Set<string>
   onDatesChange?: (dates: Set<string>) => void
   onFiltersChange?: () => void
+  showDeleted?: boolean
 }
 
 export function PayslipFiltersAndTable({
@@ -86,7 +100,6 @@ export function PayslipFiltersAndTable({
   page = 1,
   pageSize = 200,
   onPageChange,
-  onPageSizeChange,
   sortBy = 'created_at',
   sortDir = 'desc',
   onSort,
@@ -99,11 +112,14 @@ export function PayslipFiltersAndTable({
   selectedDates = new Set(),
   onDatesChange,
   onFiltersChange,
+  showDeleted = false,
 }: PayslipFiltersAndTableProps) {
   const [downloadProgress, setDownloadProgress] = useState<{ current: number; total: number } | null>(null)
   const [uniqueEmployers, setUniqueEmployers] = useState<string[]>([])
   const [uniqueDates, setUniqueDates] = useState<string[]>([])
   const [loadingFilters, setLoadingFilters] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([])
 
   // Export selected rows to Excel (XLSX) with complete payroll data matching CSV structure
   const handleExportSelected = () => {
@@ -141,6 +157,7 @@ export function PayslipFiltersAndTable({
         bonus: r.bonus ?? '',
         overtime: r.overtime ?? '',
         salary_in_arrears: r.salary_in_arrears ?? '',
+        unutilised_leave_days_payment: r.unutilised_leave_days_payment ?? '',
         expenses_deductions: r.expenses_deductions ?? '',
         other_reimbursements: r.other_reimbursements ?? '',
         expense_reimbursements: r.expense_reimbursements ?? '',
@@ -158,7 +175,7 @@ export function PayslipFiltersAndTable({
         'leave_without_pay_days', 'currency', 'basic_salary', 'housing_allowance', 
         'education_allowance', 'flight_allowance', 'general_allowance', 'gratuity_eosb',
         'other_allowance', 'transport_allowance', 'total_gross_salary', 'bonus', 'overtime',
-        'salary_in_arrears', 'expenses_deductions', 'other_reimbursements', 'expense_reimbursements',
+        'salary_in_arrears', 'unutilised_leave_days_payment', 'expenses_deductions', 'other_reimbursements', 'expense_reimbursements',
         'total_adjustments', 'net_salary', 'esop_deductions', 'total_payment_adjustments', 'net_payment'
       ]
       
@@ -211,10 +228,24 @@ export function PayslipFiltersAndTable({
     }
   }
 
-  // Delete selected rows
-  const handleDeleteSelected = async () => {
+  // Handle delete confirmation dialog
+  const handleDeleteClick = () => {
     const ids = rows.filter(r => selected.has(r.batch_id)).map(r => r.batch_id)
     if (ids.length === 0) return
+    setPendingDeleteIds(ids)
+    setShowDeleteDialog(true)
+  }
+
+  // Delete selected rows (called after confirmation)
+  const handleDeleteConfirmed = async () => {
+    const ids = pendingDeleteIds
+    if (ids.length === 0) {
+      setShowDeleteDialog(false)
+      return
+    }
+    
+    setShowDeleteDialog(false)
+    
     try {
       const res = await fetch('/api/admin/payslips/delete', {
         method: 'POST',
@@ -225,12 +256,100 @@ export function PayslipFiltersAndTable({
         const msg = await res.text()
         throw new Error(msg)
       }
-      toast({ title: 'Deleted', description: `Removed ${ids.length} row(s).` })
+      
+      // Show toast with undo button
+      toast({
+        title: 'Deleted',
+        description: `Removed ${ids.length} record${ids.length !== 1 ? 's' : ''}.`,
+        action: (
+          <ToastAction altText="Undo" onClick={() => handleRestoreDeleted(ids)}>
+            Undo
+          </ToastAction>
+        ),
+      })
+      
       onSelectionChange(new Set())
       onPayrunSuccess?.()
-      // Also try to call onClearSort? No - keep as is. Parent should refresh via provided callbacks.
+      setPendingDeleteIds([])
     } catch (e: any) {
       toast({ title: 'Delete failed', description: e?.message || 'Unknown error', variant: 'destructive' })
+      setPendingDeleteIds([])
+    }
+  }
+
+  // Restore deleted rows (from toast undo or button)
+  const handleRestoreDeleted = async (ids: string[]) => {
+    if (ids.length === 0) return
+    
+    try {
+      const res = await fetch('/api/admin/payslips/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      if (!res.ok) {
+        const msg = await res.text()
+        throw new Error(msg)
+      }
+      
+      toast({ 
+        title: 'Restored', 
+        description: `Restored ${ids.length} record${ids.length !== 1 ? 's' : ''}.` 
+      })
+      
+      onSelectionChange(new Set())
+      onPayrunSuccess?.()
+    } catch (e: any) {
+      toast({ 
+        title: 'Restore failed', 
+        description: e?.message || 'Unknown error', 
+        variant: 'destructive' 
+      })
+    }
+  }
+
+  // Restore selected rows (from restore button)
+  const handleRestoreSelected = async () => {
+    const ids = rows.filter(r => selected.has(r.batch_id)).map(r => r.batch_id)
+    if (ids.length === 0) return
+    await handleRestoreDeleted(ids)
+  }
+
+  // Permanently delete selected rows (hard delete from database)
+  const handlePermanentDelete = async () => {
+    const ids = rows.filter(r => selected.has(r.batch_id)).map(r => r.batch_id)
+    if (ids.length === 0) return
+    
+    // Confirm permanent deletion
+    const confirmMessage = `Are you sure you want to permanently delete ${ids.length} record${ids.length !== 1 ? 's' : ''}? This action CANNOT be undone.`
+    if (!confirm(confirmMessage)) {
+      return
+    }
+    
+    try {
+      const res = await fetch('/api/admin/payslips/delete-permanent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      if (!res.ok) {
+        const msg = await res.text()
+        throw new Error(msg)
+      }
+      
+      toast({ 
+        title: 'Permanently deleted', 
+        description: `Permanently removed ${ids.length} record${ids.length !== 1 ? 's' : ''} from the database.` 
+      })
+      
+      onSelectionChange(new Set())
+      onPayrunSuccess?.()
+    } catch (e: any) {
+      toast({ 
+        title: 'Permanent delete failed', 
+        description: e?.message || 'Unknown error', 
+        variant: 'destructive' 
+      })
     }
   }
 
@@ -630,29 +749,32 @@ export function PayslipFiltersAndTable({
           >
             Send to Email
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDeleteSelected}
-            disabled={!selected.size}
-          >
-            Delete Selected
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-slate-600">Rows per page</span>
-            <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange?.(Number(v))}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 text-white">
-                <SelectItem value="25" >25</SelectItem>
-                <SelectItem value="250">250</SelectItem>
-                <SelectItem value="1000">1000</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {!showDeleted ? (
+            <Button
+              variant="default"
+              onClick={handleDeleteClick}
+              disabled={!selected.size}
+            >
+              Delete Selected
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="default"
+                onClick={handleRestoreSelected}
+                disabled={!selected.size}
+              >
+                Restore Selected
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handlePermanentDelete}
+                disabled={!selected.size}
+              >
+                Delete Permanently
+              </Button>
+            </>
+          )}
         </div>
       </div>
       {/* Table Section */}
@@ -722,7 +844,53 @@ export function PayslipFiltersAndTable({
               <TableCell>{(row as any).net_salary}</TableCell>
               <TableCell>{(row as any).net_payment ?? (row as any).net_salary ?? '-'}</TableCell>
               <TableCell>
-                {row.last_sent_at ? new Date(row.last_sent_at).toLocaleString() : <span className="text-cyan-600 text-xs">Never</span>}
+                {(() => {
+                  // Use delivery_status_updated_at if available, otherwise use last_sent_at
+                  const statusTimestamp = row.delivery_status_updated_at || row.last_sent_at
+                  const deliveryStatus = row.delivery_status
+                  
+                  if (!statusTimestamp) {
+                    return <span className="text-cyan-600 text-xs">Never</span>
+                  }
+                  
+                  // Format timestamp
+                  const date = new Date(statusTimestamp)
+                  const formattedDate = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                  const formattedTime = date.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })
+                  
+                  // Determine status badge color and text
+                  let statusBadge: { text: string; className: string } | null = null
+                  if (deliveryStatus === 'delivered') {
+                    statusBadge = { text: 'Delivered', className: 'bg-green-100 text-green-800 border-green-200' }
+                  } else if (deliveryStatus === 'sent') {
+                    statusBadge = { text: 'Sent', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' }
+                  } else if (deliveryStatus === 'failed' || deliveryStatus === 'bounced' || deliveryStatus === 'complained') {
+                    statusBadge = { text: 'Failed', className: 'bg-red-100 text-red-800 border-red-200' }
+                  } else if (deliveryStatus) {
+                    // Other statuses like 'opened', 'clicked', etc.
+                    statusBadge = { text: deliveryStatus.charAt(0).toUpperCase() + deliveryStatus.slice(1), className: 'bg-blue-100 text-blue-800 border-blue-200' }
+                  }
+                  
+                  return (
+                    <div className="flex flex-col gap-1">
+                      {statusBadge && (
+                        <Badge variant="outline" className={`text-xs ${statusBadge.className}`}>
+                          {statusBadge.text}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-slate-600">
+                        {statusBadge ? `${statusBadge.text} ${formattedDate}, ${formattedTime}` : `${formattedDate}, ${formattedTime}`}
+                      </span>
+                    </div>
+                  )
+                })()}
               </TableCell>
             </TableRow>
           ))}
@@ -747,7 +915,27 @@ export function PayslipFiltersAndTable({
         </Pagination>
       </div>
 
-
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {pendingDeleteIds.length} record{pendingDeleteIds.length !== 1 ? 's' : ''}? 
+              This action can be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirmed}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

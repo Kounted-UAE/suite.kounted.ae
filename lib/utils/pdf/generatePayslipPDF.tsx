@@ -298,6 +298,7 @@ interface EmployeeData {
   bonus?: number
   overtime?: number
   salary_in_arrears?: number
+  unutilised_leave_days_payment?: number
   expenses_deductions?: number
   other_reimbursements?: number
   expense_reimbursements?: number
@@ -363,9 +364,10 @@ const PayslipDocument: React.FC<PayslipInput> = ({ employee, batch }) => {
     { label: 'Bonus', amount: employee.bonus, type: 'variable' },
     { label: 'Overtime', amount: employee.overtime, type: 'variable' },
     { label: 'Salary in Arrears', amount: employee.salary_in_arrears, type: 'variable' },
+    { label: 'Gratuity/EOSB', amount: employee.gratuity_eosb, type: 'variable' },
+    { label: 'Unutilised Leave Days Payment', amount: employee.unutilised_leave_days_payment, type: 'variable' },
     { label: 'Adhoc Expenses', amount: employee.expenses_deductions, type: 'variable' },
     { label: 'School Reimbursements', amount: employee.other_reimbursements, type: 'variable' },
-    { label: 'Gratuity/EOSB', amount: employee.gratuity_eosb, type: 'variable' },
     { label: 'Internet Reimbursements', amount: employee.expense_reimbursements, type: 'variable' }
   ].filter(item => item.amount && item.amount > 0)
 

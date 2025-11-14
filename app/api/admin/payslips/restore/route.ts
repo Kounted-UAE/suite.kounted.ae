@@ -11,11 +11,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'ids array required' }, { status: 400 })
     }
 
-    // Soft delete: Set deleted_at timestamp instead of hard deleting
-    const deletedAt = new Date().toISOString()
+    // Restore: Set deleted_at back to NULL
     const { data, error } = await supabase
       .from('payroll_excel_imports')
-      .update({ deleted_at: deletedAt })
+      .update({ deleted_at: null })
       .in('id', ids)
       .select('id')
 
@@ -23,11 +22,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true, deleted: ids.length, ids: data?.map(r => r.id) || ids })
+    return NextResponse.json({ ok: true, restored: ids.length, ids: data?.map(r => r.id) || ids })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Internal server error' }, { status: 500 })
   }
 }
-
 
 

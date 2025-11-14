@@ -56,28 +56,52 @@ console.log('📄 PDF:', url)
       html,
     })
 
-    // Log send event (best-effort)
+    // Validate Resend response - check if email ID exists
+    const resendEmailId = result.data?.id
+    if (!resendEmailId) {
+      console.error('⚠️ Resend returned success but no email ID:', result)
+      // This is a warning but we'll still log it as sent since Resend accepted it
+      // The email might have been queued but ID not returned
+    }
+
+    // Log send event with Resend email ID (best-effort)
     try {
       const urlEnv = process.env.NEXT_PUBLIC_SUPABASE_URL
       const keyEnv = process.env.SUPABASE_SERVICE_ROLE_KEY
       if (urlEnv && keyEnv && batch_id) {
         const supabase = createClient(urlEnv, keyEnv)
+        const now = new Date().toISOString()
         await supabase
           .from('payroll_payslip_send_events')
           .insert({
             batch_id,
             recipients: Array.isArray(to) ? to.join(', ') : String(to),
             status: 'sent',
-            error_message: null,
+            error_message: resendEmailId ? null : 'Resend accepted email but did not return email ID',
+            resend_email_id: resendEmailId || null,
+            delivery_status: 'sent',
+            delivery_status_updated_at: now,
+            resend_last_event: 'sent',
           })
       }
     } catch (e) {
       console.warn('⚠️ Failed to log send event', e)
     }
 
-    return NextResponse.json({ success: true, result })
+    // Return response with Resend email ID for frontend tracking
+    return NextResponse.json({ 
+      success: true, 
+      resendEmailId: resendEmailId || null,
+      warning: resendEmailId ? null : 'Email accepted but Resend ID not returned',
+      result 
+    })
   } catch (err: any) {
     console.error('❌ Email send failed:', err)
+    
+    // Extract error message
+    const errorMessage = err?.message || err?.toString() || 'Unknown error'
+    const errorDetails = err?.response?.data || err?.data || null
+    
     // Log failure event (best-effort)
     try {
       const urlEnv = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -90,13 +114,22 @@ console.log('📄 PDF:', url)
             batch_id,
             recipients: Array.isArray(to) ? to.join(', ') : String(to),
             status: 'failed',
-            error_message: err?.message || 'Unknown error',
+            error_message: errorMessage,
+            delivery_status: 'failed',
+            delivery_status_updated_at: new Date().toISOString(),
           })
       }
     } catch (e) {
       console.warn('⚠️ Failed to log send failure event', e)
     }
 
-    return new NextResponse('Email send failed', { status: 500 })
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: errorMessage,
+        details: errorDetails 
+      }, 
+      { status: 500 }
+    )
   }
 }

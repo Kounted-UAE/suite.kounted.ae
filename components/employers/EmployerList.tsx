@@ -2,10 +2,22 @@
 
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/react-ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/react-ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/react-ui/table'
+import { Card, CardContent } from '@/components/react-ui/card'
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCheckboxCell,
+  DataTableHeader,
+  DataTableRow,
+  StickyCell,
+  StickyHeadCell,
+  BaseTableRow,
+  BaseTableCell,
+  DataTableHead,
+  DataTableSelectionHeadCell,
+} from '@/components/react-layout/DataTable'
 import { useToast } from '@/hooks/use-toast'
-import { Pencil, Trash2, Plus, Copy } from 'lucide-react'
+import { Pencil, Trash2, Copy } from 'lucide-react'
 
 interface Employer {
   id: string
@@ -17,10 +29,9 @@ interface Employer {
 
 interface EmployerListProps {
   onEdit?: (employer: Employer) => void
-  onAdd?: () => void
 }
 
-export default function EmployerList({ onEdit, onAdd }: EmployerListProps) {
+export default function EmployerList({ onEdit }: EmployerListProps) {
   const { toast } = useToast()
   const [employers, setEmployers] = useState<Employer[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -120,36 +131,35 @@ export default function EmployerList({ onEdit, onAdd }: EmployerListProps) {
 
   return (
     <Card className="bg-white">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Employers</CardTitle>
-        {onAdd && (
-          <Button onClick={onAdd} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Employer
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {employers.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             No employers found. Add one to get started.
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Company Name</TableHead>
-                <TableHead>Employer ID</TableHead>
-                <TableHead>Reviewer Email</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <DataTable
+            selectable
+            stickyColumnWidth={240}
+            containerClassName="max-h-[65vh]"
+            rowCount={employers.length}
+            allRowIds={employers.map((employer) => employer.id)}
+          >
+            <DataTableHeader className="bg-white">
+              <BaseTableRow>
+                <DataTableSelectionHeadCell />
+                <StickyHeadCell>Company Name</StickyHeadCell>
+                <DataTableHead>Employer ID</DataTableHead>
+                <DataTableHead>Reviewer Email</DataTableHead>
+                <DataTableHead>Created</DataTableHead>
+                <DataTableHead className="text-right">Actions</DataTableHead>
+              </BaseTableRow>
+            </DataTableHeader>
+            <DataTableBody>
               {employers.map((employer) => (
-                <TableRow key={employer.id}>
-                  <TableCell className="font-medium">{employer.name}</TableCell>
-                  <TableCell>
+                <DataTableRow key={employer.id} rowId={employer.id}>
+                  <DataTableCheckboxCell rowId={employer.id} />
+                  <StickyCell>{employer.name}</StickyCell>
+                  <BaseTableCell>
                     <div className="flex items-center gap-2">
                       <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
                         {employer.id.substring(0, 8)}...
@@ -163,10 +173,10 @@ export default function EmployerList({ onEdit, onAdd }: EmployerListProps) {
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
-                  </TableCell>
-                  <TableCell>{employer.reviewer_email}</TableCell>
-                  <TableCell>{formatDate(employer.created_at)}</TableCell>
-                  <TableCell className="text-right">
+                  </BaseTableCell>
+                  <BaseTableCell>{employer.reviewer_email}</BaseTableCell>
+                  <BaseTableCell>{formatDate(employer.created_at)}</BaseTableCell>
+                  <BaseTableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       {onEdit && (
                         <Button
@@ -190,11 +200,11 @@ export default function EmployerList({ onEdit, onAdd }: EmployerListProps) {
                         )}
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </BaseTableCell>
+                </DataTableRow>
               ))}
-            </TableBody>
-          </Table>
+            </DataTableBody>
+          </DataTable>
         )}
       </CardContent>
     </Card>

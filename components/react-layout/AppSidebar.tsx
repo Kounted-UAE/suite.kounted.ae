@@ -1,132 +1,154 @@
 'use client'
 
-import React from "react"
+import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/react-ui/button"
-import { Separator } from "@/components/react-ui/separator"
-import { ChevronDown, Plus, HomeIcon } from "lucide-react"
 import clsx from "clsx"
-import { sidebarSections } from "@/lib/config/sidebar-nav"
-import { ScrollArea } from "@/components/react-ui/scroll-area"
-import { Badge } from "@/components/react-ui/badge"
-import { useSidebar } from "./sidebar-context"
+import { ChevronDown } from "lucide-react"
 
-export function AppSidebar() {
+import { cn } from "@/lib/utils"
+import { useSidebar } from "./sidebar-context"
+import { ScrollArea } from "@/components/react-ui/scroll-area"
+import { sidebarSections } from "@/lib/config/sidebar-nav"
+import { Badge } from "@/components/react-ui/badge"
+import { SidebarTrigger } from "./sidebar-trigger"
+
+const SIDEBAR_WIDTH_EXPANDED = 260
+const SIDEBAR_WIDTH_COLLAPSED = 80
+
+type AppSidebarProps = {
+  className?: string
+}
+
+export function AppSidebar({ className }: AppSidebarProps = {}) {
   const pathname = usePathname()
-  const { state } = useSidebar()
+  const { state, isMobile, openMobile, toggleSidebar } = useSidebar()
   const collapsed = state === "collapsed"
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({})
 
   const isActive = (path: string) => pathname === path
-  const getNavCls = (path: string) =>
+  const getNavCls = (path: string, collapsedView: boolean) =>
     isActive(path)
-      ? "text-neutral-700 bg-zinc-100 font-bold"
-      : "text-neutral-200 hover:bg-zinc-100 hover:text-slate-400"
+      ? "text-slate-900 bg-slate-100 font-semibold"
+      : collapsedView
+      ? "text-slate-600 hover:text-slate-900"
+      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
 
-  const toggle = (label: string) =>
+  const toggleSection = (label: string) =>
     setExpanded((prev) => ({ ...prev, [label]: !prev[label] }))
 
-  return (
-    <div className={`fixed left-0 top-20 z-40 flex flex-col h-[calc(100vh-5rem)] text-xs bg-slate-900 ${collapsed ? 'w-20' : 'w-64'}`}>
-      {/* Scrollable Content */}
-      <ScrollArea className="flex-1 overflow-y-auto">
-        <div className="p-1">
-          {sidebarSections.map((section) => (
-            <div key={section.label} className="mb-4">
-              {!collapsed && (
-                <div className="flex items-center justify-between px-2 py-2 border-b-1 m-2 border-zinc-400/50">
-                  <div className="text-zinc-300 text-xs font-bold uppercase tracking-normal">
-                    {section.label}
-                  </div>
-                  {section.collapsible !== true && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggle(section.label)}
-                      className="h-auto p-1 hover:bg-zinc-300 hover:text-zinc-600"
-                    >
-                      <ChevronDown
-                        className={clsx(
-                          "h-2 w-2 transition-transform",
-                          expanded[section.label] !== false ? "rotate-0" : "-rotate-90"
-                        )}
-                      />
-                    </Button>
-                  )}
-                </div>
+  const renderSections = (collapsedView: boolean) => (
+    <div className="px-2 py-3">
+      {sidebarSections.map((section) => (
+        <div key={section.label} className="mb-4">
+          {!collapsedView && (
+            <div className="flex items-center justify-between border-b border-slate-200 px-2 py-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                {section.label}
+              </div>
+              {section.collapsible !== true && (
+                <button
+                  type="button"
+                  onClick={() => toggleSection(section.label)}
+                  className="inline-flex h-auto items-center rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                >
+                  <ChevronDown
+                    className={clsx(
+                      "h-2 w-2 transition-transform",
+                      expanded[section.label] !== false ? "rotate-0" : "-rotate-90"
+                    )}
+                  />
+                </button>
               )}
-              {(section.collapsible === false || expanded[section.label] !== false) && (
-                <div>
-                  {section.items && (
-                    <div className="space-y-1">
-                      {section.items.map((item) => {
-                        const status = item.status || "active"
-                        const isInactive = status === "locked" || status === "wip"
-                        return (
-                          <div key={item.title}>
-                            {isInactive ? (
-                              <div className={clsx(
-                                "flex items-center py-2 mx-1 text-zinc-300/50 cursor-not-allowed",
-                                collapsed ? "justify-center px-0" : "gap-2 px-2"
-                              )}>
-                                {item.icon && <item.icon className="h-4 w-4" />}
-                                {!collapsed && (
-                                  <span className="text-xs">{item.title}</span>
-                                )}
-                                {!collapsed && (
-                                  <Badge variant="secondary" className="ml-auto text-xs">
-                                    {status === "locked" ? "🔒" : "🛡️"}
-                                  </Badge>
-                                )}
-                              </div>
-                            ) : (
-                              <Link
-                                href={item.url || "#"}
-                                className={clsx(
-                                  "flex items-center py-2 rounded-md transition-colors mx-1",
-                                  collapsed ? "justify-center px-0" : "gap-2 px-2",
-                                  getNavCls(item.url || "")
-                                )}
-                              >
-                                {item.icon && <item.icon className="h-4 w-4" />}
-                                {!collapsed && (
-                                  <span className="text-xs">{item.title}</span>
-                                )}
-                              </Link>
+            </div>
+          )}
+          {(section.collapsible === false || expanded[section.label] !== false || collapsedView) && (
+            <div>
+              {section.items && (
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const status = item.status || "active"
+                    const isInactive = status === "locked" || status === "wip"
+                    return (
+                      <div key={item.title}>
+                        {isInactive ? (
+                          <div
+                            className={clsx(
+                              "flex items-center py-2 text-slate-300",
+                              collapsedView ? "justify-center px-0" : "mx-1 gap-2 px-2"
+                            )}
+                          >
+                            {item.icon && <item.icon className="h-4 w-4" />}
+                            {!collapsedView && <span className="text-xs">{item.title}</span>}
+                            {!collapsedView && (
+                              <Badge variant="secondary" className="ml-auto text-xs">
+                                {status === "locked" ? "🔒" : "🛡️"}
+                              </Badge>
                             )}
                           </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                        ) : (
+                          <Link
+                            href={item.url || "#"}
+                            className={clsx(
+                              "flex items-center rounded-md py-2 transition-colors",
+                              collapsedView ? "justify-center px-0" : "mx-1 gap-2 px-2",
+                              getNavCls(item.url || "", collapsedView)
+                            )}
+                          >
+                            {item.icon && <item.icon className="h-4 w-4" />}
+                            {!collapsedView && <span className="text-xs">{item.title}</span>}
+                          </Link>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
-          ))}
+          )}
         </div>
-      </ScrollArea>
-
-      {/* Footer - Fixed at bottom */}
-      <div className="p-4 flex-shrink-0 bg-slate-900 border-t border-zinc-700/50">
-        {!collapsed ? (
-          <div className="flex items-center justify-between">
-            <div className="text-xs text-zinc-300">
-              <div className="font-medium">kounted</div>
-              <div className="text-zinc-500">v2.0.0</div>
-            </div>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-200">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-200">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
+      ))}
     </div>
+  )
+
+  const desktopWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
+
+  const desktopSidebar = (
+    <aside
+      className={cn(
+        "suite-sidebar fixed top-[var(--suite-top-nav-height)] z-40 hidden h-[calc(100vh-var(--suite-top-nav-height))] flex-col border-r border-slate-200 bg-white shadow-md transition-[width] duration-300 lg:flex",
+        className
+      )}
+      style={{ width: `${desktopWidth}px` }}
+    >
+      <ScrollArea className="flex-1">{renderSections(collapsed)}</ScrollArea>
+      <div className="flex items-center justify-between border-t border-slate-200 px-3 py-3">
+        {!collapsed && (
+          <div className="text-[10px] uppercase tracking-widest text-slate-400">v2.0.0</div>
+        )}
+        <SidebarTrigger collapsed={collapsed} onClick={toggleSidebar} />
+      </div>
+    </aside>
+  )
+
+  const mobileSidebar = (
+    <aside
+      className={cn(
+        "suite-sidebar fixed left-0 top-[var(--suite-top-nav-height)] z-40 h-[calc(100vh-var(--suite-top-nav-height))] w-64 transform bg-white shadow-xl transition-transform duration-200 ease-out lg:hidden",
+        openMobile ? "translate-x-0" : "-translate-x-full"
+      )}
+    >
+      <ScrollArea className="flex-1">{renderSections(false)}</ScrollArea>
+      <div className="border-t border-slate-200 px-3 py-3">
+        <SidebarTrigger collapsed={false} onClick={toggleSidebar} />
+      </div>
+    </aside>
+  )
+
+  return (
+    <>
+      {desktopSidebar}
+      {isMobile ? mobileSidebar : null}
+    </>
   )
 }

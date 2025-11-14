@@ -41,6 +41,7 @@ const EXPECTED_COLUMNS = [
   'bonus',
   'overtime',
   'salary_in_arrears',
+  'unutilised_leave_days_payment',
   'expenses_deductions',
   'other_reimbursements',
   'expense_reimbursements',
@@ -124,7 +125,7 @@ function normalizeRow(input: Record<string, any>) {
   // Numerics - only process fields that are actually present in the data
   const numericFields = [
     'leave_without_pay_days','basic_salary','housing_allowance','transport_allowance','education_allowance','flight_allowance','general_allowance',
-    'gratuity_eosb','other_allowance','total_gross_salary','bonus','overtime','salary_in_arrears','expenses_deductions',
+    'gratuity_eosb','other_allowance','total_gross_salary','bonus','overtime','salary_in_arrears','unutilised_leave_days_payment','expenses_deductions',
     'other_reimbursements','expense_reimbursements','total_adjustments','net_salary','esop_deductions','total_payment_adjustments','net_payment','wps_fees','total_to_transfer'
   ]
   
@@ -471,6 +472,7 @@ export default function PayslipCSVImportDialog({ open, onOpenChange, onSuccess }
                   '', // bonus
                   '', // overtime
                   '', // salary_in_arrears
+                  '', // unutilised_leave_days_payment
                   '', // expenses_deductions
                   '', // other_reimbursements
                   '', // expense_reimbursements

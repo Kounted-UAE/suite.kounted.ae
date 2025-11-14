@@ -50,10 +50,11 @@ function renderHtml(template: string, row: any) {
     .replace('{{bonus}}', inject('Bonuses', row.bonus))
     .replace('{{overtime}}', inject('Overtime', row.overtime))
     .replace('{{salary_in_arrears}}', inject('Arrears/Advances', row.salary_in_arrears))
+    .replace('{{gratuity_eosb}}', inject('Gratuity/EOSB', row.gratuity_eosb))
+    .replace('{{unutilised_leave_days_payment}}', inject('Unutilised Leave Days Payment', row.unutilised_leave_days_payment))
     .replace('{{expenses_deductions}}', inject('Expense Deductions', row.expenses_deductions))
     .replace('{{expense_reimbursements}}', inject('Expense Reimbursements', row.expense_reimbursements))
     .replace('{{other_reimbursements}}', inject('Other Reimbursements', row.other_reimbursements))
-    .replace('{{gratuity_eosb}}', inject('ESOP Adjustment', row.gratuity_eosb))
     .replaceAll('{{total_adjustments}}', inject('TOTAL ADJUSTMENTS', row.total_adjustments))
     .replace('{{net_salary}}', inject('NET', row.net_salary))
     .replace('{{esop_deductions}}', inject('ESOP Deductions', row.esop_deductions))
@@ -98,6 +99,7 @@ async function processAllWithFallback(rows: any[], supabase: any, template: stri
           bonus: row.bonus,
           overtime: row.overtime,
           salary_in_arrears: row.salary_in_arrears,
+          unutilised_leave_days_payment: row.unutilised_leave_days_payment,
           expenses_deductions: row.expenses_deductions,
           other_reimbursements: row.other_reimbursements,
           expense_reimbursements: row.expense_reimbursements,
@@ -345,6 +347,7 @@ export async function POST(req: NextRequest) {
               bonus: row.bonus,
               overtime: row.overtime,
               salary_in_arrears: row.salary_in_arrears,
+              unutilised_leave_days_payment: row.unutilised_leave_days_payment,
               expenses_deductions: row.expenses_deductions,
               other_reimbursements: row.other_reimbursements,
               expense_reimbursements: row.expense_reimbursements,

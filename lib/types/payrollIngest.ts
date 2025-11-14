@@ -40,6 +40,7 @@ export type IngestRow = {
   bonus: number | null
   overtime: number | null
   salary_in_arrears: number | null
+  unutilised_leave_days_payment: number | null
   expenses_deductions: number | null
   other_reimbursements: number | null
   expense_reimbursements: number | null
@@ -88,6 +89,7 @@ export const numericFields: readonly (keyof IngestRow)[] = [
   'bonus',
   'overtime',
   'salary_in_arrears',
+  'unutilised_leave_days_payment',
   'expenses_deductions',
   'other_reimbursements',
   'expense_reimbursements',

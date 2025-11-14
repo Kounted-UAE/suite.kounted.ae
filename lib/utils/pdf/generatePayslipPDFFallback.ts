@@ -19,6 +19,7 @@ interface EmployeeData {
   bonus?: number
   overtime?: number
   salary_in_arrears?: number
+  unutilised_leave_days_payment?: number
   expenses_deductions?: number
   other_reimbursements?: number
   expense_reimbursements?: number
@@ -255,6 +256,30 @@ export async function generatePayslipPDFFallback({
     currentY -= lineHeight
   }
 
+  // Overtime
+  if (employee.overtime) {
+    page.drawText(`Overtime: ${formatCurrency(employee.overtime, employee.currency || 'AED')}`, {
+      x: 50,
+      y: currentY,
+      size: 10,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3)
+    })
+    currentY -= lineHeight
+  }
+
+  // Salary in Arrears
+  if (employee.salary_in_arrears) {
+    page.drawText(`Salary in Arrears: ${formatCurrency(employee.salary_in_arrears, employee.currency || 'AED')}`, {
+      x: 50,
+      y: currentY,
+      size: 10,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3)
+    })
+    currentY -= lineHeight
+  }
+
   // Gratuity / EOSB (Adjustment)
   if (employee.gratuity_eosb) {
     page.drawText(`Gratuity / EOSB: ${formatCurrency(employee.gratuity_eosb, employee.currency || 'AED')}`, {
@@ -267,9 +292,9 @@ export async function generatePayslipPDFFallback({
     currentY -= lineHeight
   }
 
-  // Overtime
-  if (employee.overtime) {
-    page.drawText(`Overtime: ${formatCurrency(employee.overtime, employee.currency || 'AED')}`, {
+  // Unutilised Leave Days Payment
+  if (employee.unutilised_leave_days_payment) {
+    page.drawText(`Unutilised Leave Days Payment: ${formatCurrency(employee.unutilised_leave_days_payment, employee.currency || 'AED')}`, {
       x: 50,
       y: currentY,
       size: 10,

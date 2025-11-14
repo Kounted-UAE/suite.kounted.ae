@@ -6,9 +6,11 @@ import type { IngestRow, IngestSortableField } from '@/lib/types/payrollIngest'
 import { Button } from '@/components/react-ui/button'
 import { Input } from '@/components/react-ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/react-ui/select'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/react-ui/card'
 import { toast } from '@/hooks/use-toast'
 import * as XLSX from 'xlsx'
+import { PageHeader } from '@/components/react-layout/PageHeader'
+import { FilterBar } from '@/components/react-layout/FilterBar'
+import { ActionToolbar } from '@/components/react-layout/ActionToolbar'
 
 export default function PayrollIngestPage() {
   const [rows, setRows] = useState<IngestRow[]>([])
@@ -97,31 +99,28 @@ export default function PayrollIngestPage() {
   }, [rows, visibleColumns])
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Payroll Ingest</CardTitle>
-              <CardDescription>
-                View and manage imported payroll data. Search, filter, and export payroll records for processing.
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleExport}>Export</Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+    <div className="space-y-6">
+      <PageHeader
+        title="Payroll Ingest"
+        description="View and manage imported payroll data. Search, filter, and export payroll records for processing."
+        breadcrumbs="Payroll Suite"
+        actions={
+          <Button onClick={handleExport}>
+            Export
+          </Button>
+        }
+      />
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <Input className="w-full max-w-xs" placeholder="Search employee, employer, email, IBAN..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
-        <Input className="w-full max-w-[180px]" type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} />
-        <Input className="w-full max-w-[180px]" type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} />
-        <Input className="w-full max-w-xs" placeholder="Employers (csv)" value={employers} onChange={(e) => { setEmployers(e.target.value); setPage(1) }} />
-        <Input className="w-full max-w-[140px]" placeholder="Currency (csv)" value={currency} onChange={(e) => { setCurrency(e.target.value); setPage(1) }} />
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-sm font-bold text-slate-600">Rows per page</span>
+      <FilterBar align="between">
+        <div className="flex flex-wrap items-center gap-3">
+          <Input className="w-full max-w-xs" placeholder="Search employee, employer, email, IBAN..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
+          <Input className="w-full max-w-[180px]" type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} />
+          <Input className="w-full max-w-[180px]" type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} />
+          <Input className="w-full max-w-xs" placeholder="Employers (csv)" value={employers} onChange={(e) => { setEmployers(e.target.value); setPage(1) }} />
+          <Input className="w-full max-w-[140px]" placeholder="Currency (csv)" value={currency} onChange={(e) => { setCurrency(e.target.value); setPage(1) }} />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-600">Rows per page</span>
           <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1) }}>
             <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
             <SelectContent className="bg-slate-800 text-white">
@@ -131,17 +130,24 @@ export default function PayrollIngestPage() {
             </SelectContent>
           </Select>
         </div>
-      </div>
+      </FilterBar>
 
-      <div className="text-sm text-slate-600 font-bold">Showing {rows.length} of {total}</div>
+      <ActionToolbar subdued align="between">
+        <div className="text-sm font-semibold text-slate-600">
+          Showing {rows.length} of {total}
+        </div>
+        <div className="text-xs uppercase tracking-wide text-slate-500">
+          Sorted by {sortBy} · {sortDir.toUpperCase()}
+        </div>
+      </ActionToolbar>
 
       <PayrollIngestGrid rows={rows} onChangeCell={onChangeCell} visibleColumns={visibleColumns} />
 
-      <div className="flex items-center justify-between mt-3">
+      <ActionToolbar align="between" subdued>
         <Button variant="ghost" onClick={() => setPage(p => Math.max(1, p - 1))}>Previous</Button>
         <div className="text-sm text-slate-600">Page {page} / {totalPages}</div>
         <Button variant="ghost" onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Next</Button>
-      </div>
+      </ActionToolbar>
     </div>
   )
 }

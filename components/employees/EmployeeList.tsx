@@ -2,10 +2,22 @@
 
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/react-ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/react-ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/react-ui/table'
+import { Card, CardContent } from '@/components/react-ui/card'
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCheckboxCell,
+  DataTableHeader,
+  DataTableRow,
+  StickyCell,
+  StickyHeadCell,
+  BaseTableRow,
+  BaseTableCell,
+  DataTableHead,
+  DataTableSelectionHeadCell,
+} from '@/components/react-layout/DataTable'
 import { useToast } from '@/hooks/use-toast'
-import { Pencil, Trash2, Plus, Copy } from 'lucide-react'
+import { Pencil, Trash2, Copy } from 'lucide-react'
 
 interface Employee {
   id: string
@@ -26,10 +38,9 @@ interface Employee {
 
 interface EmployeeListProps {
   onEdit?: (employee: Employee) => void
-  onAdd?: () => void
 }
 
-export default function EmployeeList({ onEdit, onAdd }: EmployeeListProps) {
+export default function EmployeeList({ onEdit }: EmployeeListProps) {
   const { toast } = useToast()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -129,105 +140,102 @@ export default function EmployeeList({ onEdit, onAdd }: EmployeeListProps) {
 
   return (
     <Card className="bg-white">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Employees</CardTitle>
-        {onAdd && (
-          <Button onClick={onAdd} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Employee
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {employees.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             No employees found. Add one to get started.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Employee ID</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Employer</TableHead>
-                  <TableHead>Employer ID</TableHead>
-                  <TableHead>MOL ID</TableHead>
-                  <TableHead>Bank</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{employee.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
-                          {employee.id.substring(0, 8)}...
-                        </code>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyToClipboard(employee.id, 'Employee ID')}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>{employee.email_id || '-'}</TableCell>
-                    <TableCell>{employee.employer.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
-                          {employee.employer_id.substring(0, 8)}...
-                        </code>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyToClipboard(employee.employer_id, 'Employer ID')}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>{employee.employee_mol || '-'}</TableCell>
-                    <TableCell>{employee.bank_name || '-'}</TableCell>
-                    <TableCell>{formatDate(employee.created_at)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {onEdit && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onEdit(employee)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
+          <DataTable
+            selectable
+            stickyColumnWidth={260}
+            containerClassName="max-h-[65vh]"
+            rowCount={employees.length}
+            allRowIds={employees.map((employee) => employee.id)}
+          >
+            <DataTableHeader className="bg-white">
+              <BaseTableRow>
+                <DataTableSelectionHeadCell />
+                <StickyHeadCell>Name</StickyHeadCell>
+                <DataTableHead>Employee ID</DataTableHead>
+                <DataTableHead>Email</DataTableHead>
+                <DataTableHead>Employer</DataTableHead>
+                <DataTableHead>Employer ID</DataTableHead>
+                <DataTableHead>MOL ID</DataTableHead>
+                <DataTableHead>Bank</DataTableHead>
+                <DataTableHead>Created</DataTableHead>
+                <DataTableHead className="text-right">Actions</DataTableHead>
+              </BaseTableRow>
+            </DataTableHeader>
+            <DataTableBody>
+              {employees.map((employee) => (
+                <DataTableRow key={employee.id} rowId={employee.id}>
+                  <DataTableCheckboxCell rowId={employee.id} />
+                  <StickyCell>{employee.name}</StickyCell>
+                  <BaseTableCell>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                        {employee.id.substring(0, 8)}...
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(employee.id, 'Employee ID')}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </BaseTableCell>
+                  <BaseTableCell>{employee.email_id || '-'}</BaseTableCell>
+                  <BaseTableCell>{employee.employer.name}</BaseTableCell>
+                  <BaseTableCell>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                        {employee.employer_id.substring(0, 8)}...
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(employee.employer_id, 'Employer ID')}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </BaseTableCell>
+                  <BaseTableCell>{employee.employee_mol || '-'}</BaseTableCell>
+                  <BaseTableCell>{employee.bank_name || '-'}</BaseTableCell>
+                  <BaseTableCell>{formatDate(employee.created_at)}</BaseTableCell>
+                  <BaseTableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      {onEdit && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDelete(employee)}
-                          disabled={deletingId === employee.id}
+                          onClick={() => onEdit(employee)}
                         >
-                          {deletingId === employee.id ? (
-                            'Deleting...'
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(employee)}
+                        disabled={deletingId === employee.id}
+                      >
+                        {deletingId === employee.id ? (
+                          'Deleting...'
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </BaseTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
         )}
       </CardContent>
     </Card>

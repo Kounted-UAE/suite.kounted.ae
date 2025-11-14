@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import EmployerForm from './EmployerForm'
 import EmployerList from './EmployerList'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/react-ui/dialog'
@@ -13,15 +13,19 @@ interface Employer {
   updated_at: string
 }
 
-export default function EmployerManagement() {
+interface EmployerManagementProps {
+  registerActions?: (actions: { openCreate: () => void }) => void
+}
+
+export default function EmployerManagement({ registerActions }: EmployerManagementProps) {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingEmployer, setEditingEmployer] = useState<Employer | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     setEditingEmployer(null)
     setIsFormOpen(true)
-  }
+  }, [])
 
   const handleEdit = (employer: Employer) => {
     setEditingEmployer(employer)
@@ -40,10 +44,16 @@ export default function EmployerManagement() {
     setEditingEmployer(null)
   }
 
+  useEffect(() => {
+    if (registerActions) {
+      registerActions({ openCreate: handleAdd })
+    }
+  }, [handleAdd, registerActions])
+
   return (
     <div className="space-y-6">
       <div key={refreshKey}>
-        <EmployerList onAdd={handleAdd} onEdit={handleEdit} />
+        <EmployerList onEdit={handleEdit} />
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>

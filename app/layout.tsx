@@ -7,6 +7,7 @@ import { Inter } from "next/font/google";
 import Script from "next/script"
 import  AuthProvider  from "@/components/auth/auth-provider"
 import { Toaster } from "@/components/react-ui/sonner"
+import { Toaster as CustomToaster } from "@/components/react-ui/toaster"
 import { CookieConsentBanner } from "@/components/react-ui/cookie-consent"
 
 import { cn } from "@/lib/utils"
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </AuthProvider>
           <Toaster />
+          <CustomToaster />
           <CookieConsentBanner />
         </AppProviders>
       </body>

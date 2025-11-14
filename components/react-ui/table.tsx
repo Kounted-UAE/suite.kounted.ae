@@ -2,26 +2,52 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-const Table = React.forwardRef<
-  HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
-    <table
-      ref={ref}
-      className={cn("w-full caption-bottom text-xs", className)}
-      {...props}
-    />
-  </div>
-))
+type TableContextValue = {
+  stickyHeader: boolean
+}
+
+const TableContext = React.createContext<TableContextValue>({
+  stickyHeader: false,
+})
+
+interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
+  containerClassName?: string
+  stickyHeader?: boolean
+}
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className, containerClassName, stickyHeader = false, ...props }, ref) => (
+    <TableContext.Provider value={{ stickyHeader }}>
+      <div className={cn("relative w-full overflow-auto", containerClassName)}>
+        <table
+          ref={ref}
+          className={cn("w-full caption-bottom text-xs", className)}
+          {...props}
+        />
+      </div>
+    </TableContext.Provider>
+  )
+)
 Table.displayName = "Table"
 
 const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
-))
+>(({ className, ...props }, ref) => {
+  const { stickyHeader } = React.useContext(TableContext)
+
+  return (
+    <thead
+      ref={ref}
+      className={cn(
+        "[&_tr]:border-b",
+        stickyHeader && "sticky top-0 z-50 bg-white shadow-sm",
+        className
+      )}
+      {...props}
+    />
+  )
+})
 TableHeader.displayName = "TableHeader"
 
 const TableBody = React.forwardRef<
