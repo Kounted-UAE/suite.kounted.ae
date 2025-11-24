@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@geist-ui/react": "^2.2.5",
-    "@glideapps/glide-data-grid": "^6.0.4",
+    "@glideapps/glide-data-grid": "^6.0.3",
     "@headlessui/react": "^2.2.6",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.9.0",
