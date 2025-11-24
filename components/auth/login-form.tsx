@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signInWithOTP, verifyOTP, signInWithPassword } from '@/lib/supabase/auth'
 import { Input } from '@/components/react-ui/input'
 import { Button } from '@/components/react-ui/button'
@@ -13,6 +13,7 @@ import { FadeIn } from '@/components/react-layout/FadeIn'
 
 export default function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [otpToken, setOtpToken] = useState('')
   const [showOTPInput, setShowOTPInput] = useState(false)
@@ -21,6 +22,16 @@ export default function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  // Check for error parameters in URL (e.g., from callback route)
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam))
+      // Clear the error from URL
+      router.replace('/auth/login', { scroll: false })
+    }
+  }, [searchParams, router])
 
 
   const features = [
@@ -36,36 +47,70 @@ export default function LoginForm() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const { error: otpError } = await signInWithOTP(email)
-    if (otpError) setError(otpError.message)
-    else setShowOTPInput(true)
-    setLoading(false)
+    setSuccess(null)
+    
+    try {
+      const { error: otpError } = await signInWithOTP(email)
+      if (otpError) {
+        setError(otpError.message || 'Failed to send login code. Please try again.')
+      } else {
+        setSuccess('Login code sent! Check your email.')
+        setShowOTPInput(true)
+      }
+    } catch (err) {
+      console.error('Unexpected error in OTP login:', err)
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const { user, session, error } = await signInWithPassword(email, password)
-    if (error) setError(error.message)
-    else if (user && session) {
-      setSuccess('Login successful! Redirecting...')
-      setTimeout(() => router.push('/suite'), 1000)
+    setSuccess(null)
+    
+    try {
+      const { user, session, error } = await signInWithPassword(email, password)
+      if (error) {
+        setError(error.message || 'Invalid email or password. Please try again.')
+      } else if (user && session) {
+        setSuccess('Login successful! Redirecting...')
+        setTimeout(() => router.push('/suite'), 1000)
+      } else {
+        setError('Login failed. Please try again.')
+      }
+    } catch (err) {
+      console.error('Unexpected error in password login:', err)
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handleOTPVerification = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const { user, session, error: authError } = await verifyOTP(email, otpToken)
-    if (authError) setError(authError.message)
-    else if (user && session) {
-      setSuccess('Login successful! Redirecting...')
-      setTimeout(() => router.push('/suite'), 1000)
+    setSuccess(null)
+    
+    try {
+      const { user, session, error: authError } = await verifyOTP(email, otpToken)
+      if (authError) {
+        setError(authError.message || 'Invalid code. Please try again.')
+      } else if (user && session) {
+        setSuccess('Login successful! Redirecting...')
+        setTimeout(() => router.push('/suite'), 1000)
+      } else {
+        setError('Verification failed. Please try again.')
+      }
+    } catch (err) {
+      console.error('Unexpected error in OTP verification:', err)
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const resetOTPFlow = () => {
@@ -83,7 +128,7 @@ export default function LoginForm() {
           Sign in to our prototype
         </h1>
         <p className="mt-4 sm:mt-6 text-sm sm:text-md text-neutral-600">
-          A prototype for firms and independent advisors. Access client records, compliance calendars, payroll, and more.
+          A prototype for staff and independent advisors. Access client records, compliance calendars, payroll, and more.
         </p>
       </FadeIn>
 
@@ -105,9 +150,6 @@ export default function LoginForm() {
       {!showOTPInput ? (
         <form onSubmit={passwordLogin ? handlePasswordLogin : handleOTPLogin} className="space-y-4 sm:space-y-5">
           <div className="space-y-1">
-            <Label htmlFor="email" className="text-sm sm:text-base text-neutral-900 font-medium">
-              Registered Email Address
-            </Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <Input
@@ -162,7 +204,7 @@ export default function LoginForm() {
             </div>
           )}
           <div className="text-right text-xs">
-            <a href="/auth/forgot-password" className="underline text-zinc-500">Forgot password?</a>
+            <a href="/auth/forgot-password" className="underline text-zinc-500 hover:text-zinc-700">Forgot password?</a>
           </div>
         </form>
       ) : (

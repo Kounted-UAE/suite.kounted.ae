@@ -1,43 +1,36 @@
 // lib/supabase/server.ts
-import { createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/types/supabase'
-import type { NextRequest, NextResponse } from 'next/server'
+import { cookies, headers } from 'next/headers'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import type { NextRequest } from 'next/server'
 
-// Type for the v_authenticated_profiles view
-export type VAuthenticatedProfile = Database['public']['Views']['v_authenticated_profiles']['Row']
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export function getSupabaseServerClientFromRequest(
-  req: NextRequest,
-  res: NextResponse
-) {
-  return createServerClient<Database>(
-    process.env['NEXT_PUBLIC_SUPABASE_URL']!,
-    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
-    {
-      cookies: {
-        get(name) {
-          return req.cookies.get(name)?.value
-        },
-        set(name, value, options) {
-          res.cookies.set(name, value, options)
-        },
-        remove(name, options) {
-          res.cookies.set(name, '', { ...options, maxAge: -1 })
-        },
-      },
-    }
-  )
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
 }
 
-// For API routes that need service role access
-export function getSupabaseServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Generic helper for Route Handlers / Server Actions
+export function getSupabaseServerClient() {
+  const cookieStore = cookies()
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables')
-  }
+  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+      set(name: string, value: string, options: CookieOptions) {
+        cookieStore.set({ name, value, ...options })
+      },
+      remove(name: string, options: CookieOptions) {
+        cookieStore.set({ name, value: '', ...options })
+      },
+    },
+  })
+}
 
-  return createClient<Database>(supabaseUrl, serviceRoleKey)
+// Optional: if you sometimes need request-aware client
+export function getSupabaseServerClientFromRequest(_req: NextRequest) {
+  // same as above for now – cookie-based
+  return getSupabaseServerClient()
 }

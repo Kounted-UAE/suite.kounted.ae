@@ -22,8 +22,8 @@ const inter = Inter({
 
 
 export const metadata: Metadata = {
-  title: "kounted Digital Solutions",
-  description: "A Central Business Suite for UAE Accounting Practices",
+  title: "Kounted Web Suite",
+  description: "A Central Suite for UAE Accounting Practices",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

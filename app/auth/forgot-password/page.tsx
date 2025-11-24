@@ -8,7 +8,6 @@ import { RootLayout } from '@/components/react-layout/RootLayout'
 import { FadeIn } from '@/components/react-layout/FadeIn'
 import { Input } from '@/components/react-ui/input'
 import { Button } from '@/components/react-ui/button'
-import { Label } from '@/components/react-ui/label'
 import { Alert, AlertDescription } from '@/components/react-ui/alert'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
@@ -24,12 +23,34 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     setError(null)
     setSuccess(null)
-    // Redirect to callback route - it will handle code exchange and redirect to reset-password
-    const redirectTo = `${window.location.origin}/auth/callback`
-    const { error } = await sendResetPasswordEmail(email, redirectTo)
-    if (error) setError(error.message)
-    else setSuccess('Reset link sent. Check your inbox.')
-    setLoading(false)
+    
+    try {
+      // Redirect to callback route - it will handle code exchange and redirect to reset-password
+      // Supabase will automatically add type=recovery to the callback URL
+      const redirectTo = `${window.location.origin}/auth/callback`
+      const { error } = await sendResetPasswordEmail(email, redirectTo)
+      
+      if (error) {
+        console.error('Password reset error:', error)
+        // Provide user-friendly error messages
+        let errorMessage = error.message || 'Failed to send reset email. Please try again.'
+        
+        if (error.message?.includes('timeout') || error.message?.includes('deadline')) {
+          errorMessage = 'The request timed out. The server is experiencing high load. Please try again in a moment.'
+        } else if (error.message?.includes('504')) {
+          errorMessage = 'The server is taking longer than expected. Please try again.'
+        }
+        
+        setError(errorMessage)
+      } else {
+        setSuccess('Reset link sent. Check your inbox.')
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -53,7 +74,6 @@ export default function ForgotPasswordPage() {
               )}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -66,7 +86,7 @@ export default function ForgotPasswordPage() {
                 <Button type="submit" disabled={loading} className="w-full">
                   {loading ? 'Sending...' : 'Send reset link'}
                 </Button>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => router.push('/login')}>
+                <Button type="button" variant="ghost" className="w-full" onClick={() => router.push('/auth/login')}>
                   Back to login
                 </Button>
               </form>

@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
     if (error) setError(error.message)
     else {
       setSuccess('Password updated. Redirecting to login...')
-      setTimeout(() => router.push('/login'), 1500)
+      setTimeout(() => router.push('/auth/login'), 1500)
     }
     setLoading(false)
   }

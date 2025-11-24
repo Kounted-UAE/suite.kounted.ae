@@ -14,6 +14,14 @@ export function getSupabaseClient() {
       auth: {
         persistSession: true,
         storage: localStorage,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      },
+      global: {
+        headers: {
+          'x-client-info': 'kounted-business-suite',
+        },
       },
     }
   )

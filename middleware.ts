@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import type { Database } from "./lib/types/supabase"
 
-const PUBLIC_ROUTES = ["/", "/login", "/auth/callback", "/auth/forgot-password", "/auth/reset-password"]
+const PUBLIC_ROUTES = ["/", "/login", "/auth/login", "/auth/callback", "/auth/forgot-password", "/auth/reset-password"]
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -38,7 +38,7 @@ process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.redirect(new URL("/login", req.url))
+    return NextResponse.redirect(new URL("/auth/login", req.url))
   }
 
   const { data: profile } = await supabase
@@ -53,7 +53,7 @@ process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
   }
 
   if (!profile || !profile.is_active) {
-    return NextResponse.redirect(new URL("/login", req.url))
+    return NextResponse.redirect(new URL("/auth/login", req.url))
   }
 
   const role = profile.role_slug

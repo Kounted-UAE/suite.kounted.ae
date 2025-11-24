@@ -2,7 +2,6 @@ onlyBuiltDependencies:
   - '@swc/core'
   - '@tailwindcss/oxide'
   - esbuild
-  - puppeteer
   - sharp
   - supabase
   - unrs-resolver

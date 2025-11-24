@@ -1,83 +1,52 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
+// app/auth/callback/route.ts
+import { NextResponse, type NextRequest } from 'next/server'
+import { getSupabaseServerClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const { searchParams } = requestUrl;
-  const code = searchParams.get("code");
-  const type = searchParams.get("type");
+  const url = new URL(request.url)
+  const code = url.searchParams.get('code')
+  const type = url.searchParams.get('type') // signup, recovery, etc.
 
-  // If code is missing, redirect safely to login page
+  // If there is no code, send user back to login
   if (!code) {
     return NextResponse.redirect(
-      new URL("/auth/login?error=missing_code", request.url)
-    );
+      new URL('/auth/login?error=missing_code', url.origin),
+    )
   }
 
-  const cookieStore = await cookies();
+  const supabase = getSupabaseServerClient()
 
-  // Determine redirect path based on auth type (before creating response)
-  let redirectPath = "/suite"; // default dashboard route
-
-  switch (type) {
-    case "recovery":
-    case "password_reset":
-      // Pass code to reset-password page for password reset flow
-      redirectPath = `/auth/reset-password?code=${encodeURIComponent(code)}`;
-      break;
-
-    case "signup":
-    case "invite":
-    case "email_change":
-    case "magiclink":
-    case "sso":
-      // On success, redirect to main suite/dashboard
-      redirectPath = "/suite";
-      break;
-
-    case "reauthentication":
-      // OTP reauth typically just returns to the app
-      redirectPath = "/suite";
-      break;
-
-    default:
-      // Default to suite for any other type or no type specified
-      redirectPath = "/suite";
-      break;
-  }
-
-  // Create response with redirect (needed for cookie setting)
-  const response = NextResponse.redirect(new URL(redirectPath, request.url));
-
-  // Create Supabase server client with cookie handlers
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name, value, options) {
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          response.cookies.set({ name, value: "", ...options });
-        },
-      },
-    }
-  );
-
-  // Exchange code for session
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error) {
-    console.error("Error exchanging code for session:", error);
+    // invalid/expired code – send back to login with message
+    const params = new URLSearchParams({
+      error: 'invalid_or_expired_link',
+    })
     return NextResponse.redirect(
-      new URL(`/auth/login?error=${encodeURIComponent(error.message)}`, request.url)
-    );
+      new URL(`/auth/login?${params.toString()}`, url.origin),
+    )
   }
 
-  return response;
+  // Decide where to go based on type
+  let redirectPath = '/suite' // default dashboard
+
+  switch (type) {
+    case 'recovery':
+    case 'password_reset':
+      redirectPath = `/auth/reset-password?code=${encodeURIComponent(code)}`
+      break
+
+    case 'signup':
+    case 'invite':
+    case 'email_change':
+    case 'magiclink':
+    case 'reauthentication':
+    case 'sso':
+    default:
+      redirectPath = '/suite'
+      break
+  }
+
+  return NextResponse.redirect(new URL(redirectPath, url.origin))
 }

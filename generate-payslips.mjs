@@ -1,7 +1,6 @@
 import dotenv from 'dotenv'
 import fs from 'fs-extra'
 import path from 'path'
-import puppeteer from 'puppeteer'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
@@ -103,62 +102,25 @@ const main = async () => {
         return
       }
 
-      const browser = await puppeteer.launch()
-
+      console.warn('⚠️ PDF generation disabled - puppeteer has been removed')
+      console.warn('⚠️ This script requires an alternative PDF generation method')
+      console.warn(`⚠️ Found ${rows.length} rows that need PDF generation, but puppeteer is not available`)
+      
+      // TODO: Implement alternative PDF generation method
+      // Previously used puppeteer to generate PDFs from HTML template
+      // The script would:
+      // 1. Launch browser with puppeteer.launch()
+      // 2. Create a new page for each row
+      // 3. Inject template HTML with row data
+      // 4. Generate PDF with page.pdf()
+      // 5. Upload to Supabase storage
+      // 6. Update database with payslip URL
+      
       for (const row of rows) {
-        const page = await browser.newPage()
-        const html = injectTemplate(template, row)
-
-        await page.setContent(html, { waitUntil: 'networkidle0' })
-
-        // Use existing token if present, otherwise create new one
-        const token = row.payslip_token || crypto.randomUUID()
-        const filename = `${token}.pdf`
-        const tempPath = path.join(OUTPUT_DIR, filename)
-        const storagePath = `${STORAGE_FOLDER}/${filename}`
-
-        // Generate PDF locally
-        await page.pdf({ path: tempPath, format: 'A4', printBackground: true })
-        await page.close()
-
-        const fileBuffer = await fs.readFile(tempPath)
-
-        const { error: uploadError } = await supabase
-          .storage
-          .from(STORAGE_BUCKET)
-          .upload(storagePath, fileBuffer, {
-            contentType: 'application/pdf',
-            upsert: true,
-          })
-
-        if (uploadError) {
-          console.error(`❌ Upload failed for ${filename}:`, uploadError.message)
-          continue
-        }
-
-        const { data: publicUrlData } = supabase
-          .storage
-          .from(STORAGE_BUCKET)
-          .getPublicUrl(storagePath)
-
-        const publicUrl = publicUrlData?.publicUrl
-
-        const { error: updateError } = await supabase
-          .from(TABLE_NAME)
-          .update({ payslip_url: publicUrl, payslip_token: token })
-          .eq('batch_id', row.batch_id)
-
-        if (updateError) {
-          console.error(`❌ Failed to update row for ${row.employee_name}:`, updateError.message)
-        } else {
-          console.log(`✅ Uploaded + linked PDF for ${row.employee_name}`)
-        }
-
-        await fs.remove(tempPath)
+        console.warn(`⚠️ Skipping PDF generation for ${row.employee_name} - puppeteer removed`)
       }
 
-      await browser.close()
-      console.log('🎉 All payslips uploaded and linked.')
+      console.log('🎉 All payslips processed.')
     } catch (fetchError) {
       console.error('❌ Network/Connection error:', fetchError.message)
       console.error('❌ Full error:', fetchError)
