@@ -47,7 +47,7 @@ export function Footer() {
       <FadeIn>
         <Navigation />
         <div className="mt-24 mb-20 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-neutral-950/10 pt-12">
-          <Link href="/" aria-label="kounted Home Page">
+          <Link href="/" aria-label="Kounted Home Page">
             <KountedIcon className="h-8" variant="dark" />
           </Link>
           <div className="flex items-center gap-4 text-xs sm:text-sm text-neutral-700">
