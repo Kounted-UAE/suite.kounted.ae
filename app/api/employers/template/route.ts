@@ -1,6 +1,9 @@
 // app/api/employers/template/route.ts
 import { NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+
+
 export async function GET() {
   try {
     // Create CSV template for employers

@@ -6,6 +6,9 @@ import { cookies } from 'next/headers';
 import type { Database } from '@/lib/types/supabase';
 import type { CreateFeatureRequest, ProjectFeature } from '@/lib/types/dev-progress';
 
+export const runtime = 'nodejs'
+
+
 async function getSupabaseClient() {
   const cookieStore = await cookies();
   

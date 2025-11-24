@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabase/server'
 import type { IngestSortableField } from '@/lib/types/payrollIngest'
 
+export const runtime = 'nodejs'
+
+
 export async function GET(request: Request) {
   try {
     const supabase = getSupabaseServiceClient()

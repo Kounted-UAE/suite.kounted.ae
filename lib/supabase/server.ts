@@ -29,6 +29,9 @@ export function getSupabaseServerClient() {
   })
 }
 
+// Alias for backwards compatibility
+export const getSupabaseServiceClient = getSupabaseServerClient
+
 // Optional: if you sometimes need request-aware client
 export function getSupabaseServerClientFromRequest(_req: NextRequest) {
   // same as above for now – cookie-based

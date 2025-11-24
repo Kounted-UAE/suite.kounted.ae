@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClientFromRequest } from '@/lib/supabase/server'
 import { getTeamworkProjectsAPI } from '@/lib/teamwork/projects'
 
+export const runtime = 'nodejs'
+
+
 interface BulkUpdateItem {
   id: string
   updates: Record<string, any>

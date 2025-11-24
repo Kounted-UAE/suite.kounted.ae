@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabase/server'
 import { dateFields, editableTextFields, numericFields } from '@/lib/types/payrollIngest'
 
+export const runtime = 'nodejs'
+
+
 const editableSet = new Set<string>([
   ...editableTextFields,
   ...dateFields,

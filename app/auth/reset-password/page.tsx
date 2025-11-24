@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { updateUserPassword } from '@/lib/supabase/auth'
@@ -13,7 +13,7 @@ import { Label } from '@/components/react-ui/label'
 import { Alert, AlertDescription } from '@/components/react-ui/alert'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
@@ -152,4 +152,23 @@ export default function ResetPasswordPage() {
   )
 }
 
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <RootLayout>
+        <Container className="mt-4 sm:mt-8 lg:mt-16">
+          <div className="flex flex-col items-center justify-center mx-auto min-h-screen py-4 sm:py-8">
+            <FadeIn>
+              <div className="w-full max-w-md mx-auto px-4 sm:px-0 bg-white rounded-2xl p-6 sm:p-8">
+                <p className="text-center">Loading...</p>
+              </div>
+            </FadeIn>
+          </div>
+        </Container>
+      </RootLayout>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
+  )
+}
 

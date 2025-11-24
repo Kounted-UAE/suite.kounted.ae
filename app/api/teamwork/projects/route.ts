@@ -4,6 +4,9 @@ import { getSupabaseServerClientFromRequest } from '@/lib/supabase/server'
 import { getTeamworkProjectsAPI } from '@/lib/teamwork/projects'
 
 // GET all projects
+
+export const runtime = 'nodejs'
+
 export async function GET(req: NextRequest) {
   try {
     const res = new NextResponse()

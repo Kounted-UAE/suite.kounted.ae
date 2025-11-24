@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import type { PayPeriodClosureRequest, PayPeriodClosureSummary } from '@/lib/types/payrollIngest'
 
+export const runtime = 'nodejs'
+
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await getSupabaseClient()

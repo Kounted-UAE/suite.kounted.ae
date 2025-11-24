@@ -2,6 +2,9 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabase/server'
 
+export const runtime = 'nodejs'
+
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = getSupabaseServiceClient()

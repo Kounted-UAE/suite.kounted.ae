@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabase/server'
 import crypto from 'crypto'
 
+export const runtime = 'nodejs'
+
+
 export async function POST(req: NextRequest) {
   try {
     console.log('Starting payslip import API...')

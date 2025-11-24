@@ -2,6 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClientFromRequest } from '@/lib/supabase/server'
 
+export const runtime = 'nodejs'
+
+
 export async function GET(req: NextRequest) {
   const res = new NextResponse()
   const supabase = getSupabaseServerClientFromRequest(req, res)

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServerClientFromRequest } from '@/lib/supabase/server'
 import { TEAMWORK_CLIENT_ID, TEAMWORK_CLIENT_SECRET, TEAMWORK_TOKEN_URL, TEAMWORK_REDIRECT_URI } from '@/lib/teamwork/client'
 
+export const runtime = 'nodejs'
+
+
 export async function GET(req: NextRequest) {
   const res = new NextResponse()
   const supabase = getSupabaseServerClientFromRequest(req, res)

@@ -5,6 +5,9 @@ import { generatePayslipPDFStyled } from '@/lib/utils/pdf/generatePayslipPDFStyl
 import { generatePayslipPDFFallback } from '@/lib/utils/pdf/generatePayslipPDFFallback'
 import { generatePayslipFilename } from '@/lib/utils/pdf/payslipNaming'
 
+export const runtime = 'nodejs'
+
+
 const STORAGE_BUCKET = 'Payroll'
 const STORAGE_FOLDER = '' // Root of Payroll bucket
 

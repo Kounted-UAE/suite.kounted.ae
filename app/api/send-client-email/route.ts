@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
+export const runtime = 'nodejs'
+
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || process.env.ALLOWED_ORIGIN || (process.env.NODE_ENV === 'production' 
     ? "https://suite.kounted.ae" 

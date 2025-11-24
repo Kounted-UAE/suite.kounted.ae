@@ -47,6 +47,38 @@ export async function signInWithOtp(email: string) {
   return data
 }
 
+// Alias for backwards compatibility
+export const signInWithOTP = signInWithOtp
+
+export async function verifyOTP(email: string, token: string) {
+  const supabase = getBrowserClient()
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  })
+  if (error) throw error
+  return data
+}
+
+export async function sendResetPasswordEmail(email: string, redirectTo?: string) {
+  const supabase = getBrowserClient()
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectTo || `${window.location.origin}/auth/callback`,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function updateUserPassword(newPassword: string) {
+  const supabase = getBrowserClient()
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function signOut() {
   const supabase = getBrowserClient()
   const { error } = await supabase.auth.signOut()

@@ -5,6 +5,9 @@ import OpenAI from 'openai';
 import type { AISessionAnalysis } from '@/lib/types/dev-progress';
 import { getAllFeatures } from '@/lib/utils/extract-features';
 
+export const runtime = 'nodejs'
+
+
 const openai = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY'],
 });
