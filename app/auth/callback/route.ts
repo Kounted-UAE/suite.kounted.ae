@@ -41,28 +41,24 @@ export async function GET(request: NextRequest) {
     console.log('[Auth Callback] Code exchange successful:', {
       userId: data?.user?.id,
       sessionPresent: !!data?.session,
+      recoverySentAt: data?.user?.recovery_sent_at,
+      userMetadata: data?.user?.user_metadata,
     })
 
-    // Decide where to go based on type
+    // Check if this is a password recovery by looking at user metadata
+    // Supabase sets recovery_sent_at in user metadata during password reset
+    const isPasswordRecovery = data?.user?.recovery_sent_at != null || 
+                                data?.user?.user_metadata?.password_recovery === true
+
+    // Decide where to go based on type or recovery detection
     let redirectPath = '/suite' // default dashboard
 
-    switch (type) {
-      case 'recovery':
-      case 'password_reset':
-        redirectPath = `/auth/reset-password`
-        console.log('[Auth Callback] Redirecting to password reset')
-        break
-
-      case 'signup':
-      case 'invite':
-      case 'email_change':
-      case 'magiclink':
-      case 'reauthentication':
-      case 'sso':
-      default:
-        redirectPath = '/suite'
-        console.log('[Auth Callback] Redirecting to suite dashboard')
-        break
+    if (isPasswordRecovery || type === 'recovery' || type === 'password_reset') {
+      redirectPath = `/auth/reset-password`
+      console.log('[Auth Callback] Password recovery detected - redirecting to password reset')
+    } else {
+      redirectPath = '/suite'
+      console.log('[Auth Callback] Regular login - redirecting to suite dashboard')
     }
 
     const redirectUrl = new URL(redirectPath, url.origin)
