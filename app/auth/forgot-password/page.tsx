@@ -11,6 +11,8 @@ import { Button } from '@/components/react-ui/button'
 import { Alert, AlertDescription } from '@/components/react-ui/alert'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default function ForgotPasswordPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')

@@ -9,45 +9,71 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get('code')
   const type = url.searchParams.get('type') // signup, recovery, etc.
 
+  console.log('[Auth Callback] Received request:', {
+    code: code ? 'present' : 'missing',
+    type,
+    url: url.toString(),
+  })
+
   // If there is no code, send user back to login
   if (!code) {
+    console.error('[Auth Callback] No code provided')
     return NextResponse.redirect(
       new URL('/?error=Missing authentication code', url.origin),
     )
   }
 
-  const supabase = getSupabaseServerClient()
+  try {
+    const supabase = getSupabaseServerClient()
 
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    console.log('[Auth Callback] Exchanging code for session...')
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
-  if (error) {
-    // invalid/expired code – send back to login with message
-    console.error('Code exchange error:', error)
-    const errorMessage = encodeURIComponent('Invalid or expired link. Please request a new one.')
+    if (error) {
+      // invalid/expired code – send back to login with message
+      console.error('[Auth Callback] Code exchange error:', error.message, error)
+      const errorMessage = encodeURIComponent('Invalid or expired link. Please request a new one.')
+      return NextResponse.redirect(
+        new URL(`/?error=${errorMessage}`, url.origin),
+      )
+    }
+
+    console.log('[Auth Callback] Code exchange successful:', {
+      userId: data?.user?.id,
+      sessionPresent: !!data?.session,
+    })
+
+    // Decide where to go based on type
+    let redirectPath = '/suite' // default dashboard
+
+    switch (type) {
+      case 'recovery':
+      case 'password_reset':
+        redirectPath = `/auth/reset-password`
+        console.log('[Auth Callback] Redirecting to password reset')
+        break
+
+      case 'signup':
+      case 'invite':
+      case 'email_change':
+      case 'magiclink':
+      case 'reauthentication':
+      case 'sso':
+      default:
+        redirectPath = '/suite'
+        console.log('[Auth Callback] Redirecting to suite dashboard')
+        break
+    }
+
+    const redirectUrl = new URL(redirectPath, url.origin)
+    console.log('[Auth Callback] Final redirect:', redirectUrl.toString())
+    
+    return NextResponse.redirect(redirectUrl)
+  } catch (err) {
+    console.error('[Auth Callback] Unexpected error:', err)
+    const errorMessage = encodeURIComponent('Authentication failed. Please try again.')
     return NextResponse.redirect(
       new URL(`/?error=${errorMessage}`, url.origin),
     )
   }
-
-  // Decide where to go based on type
-  let redirectPath = '/suite' // default dashboard
-
-  switch (type) {
-    case 'recovery':
-    case 'password_reset':
-      redirectPath = `/auth/reset-password?code=${encodeURIComponent(code)}`
-      break
-
-    case 'signup':
-    case 'invite':
-    case 'email_change':
-    case 'magiclink':
-    case 'reauthentication':
-    case 'sso':
-    default:
-      redirectPath = '/suite'
-      break
-  }
-
-  return NextResponse.redirect(new URL(redirectPath, url.origin))
 }

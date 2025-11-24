@@ -38,7 +38,7 @@ process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.redirect(new URL("/auth/login", req.url))
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
   const { data: profile } = await supabase
@@ -53,7 +53,7 @@ process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
   }
 
   if (!profile || !profile.is_active) {
-    return NextResponse.redirect(new URL("/auth/login", req.url))
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
   const role = profile.role_slug

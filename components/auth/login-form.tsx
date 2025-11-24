@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signInWithOTP, verifyOTP, signInWithPassword } from '@/lib/supabase/auth'
 import { Input } from '@/components/react-ui/input'
@@ -22,17 +22,22 @@ export default function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const hasProcessedError = useRef(false)
 
   // Check for error parameters in URL (e.g., from callback route)
+  // Only run once to prevent loops
   useEffect(() => {
+    if (hasProcessedError.current) return
+    
     const errorParam = searchParams.get('error')
     if (errorParam) {
+      hasProcessedError.current = true
       const decodedError = decodeURIComponent(errorParam)
       // Only set error if it's a valid string
       if (decodedError && decodedError !== '{}' && decodedError.trim() !== '') {
         setError(decodedError)
       }
-      // Clear the error from URL
+      // Clear the error from URL without triggering navigation
       router.replace('/', { scroll: false })
     }
   }, [searchParams, router])

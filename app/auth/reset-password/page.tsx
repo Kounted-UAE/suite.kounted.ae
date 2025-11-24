@@ -13,6 +13,8 @@ import { Label } from '@/components/react-ui/label'
 import { Alert, AlertDescription } from '@/components/react-ui/alert'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()

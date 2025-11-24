@@ -8,6 +8,8 @@ import { Container } from '@/components/react-layout/Container'
 import { FadeIn } from '@/components/react-layout/FadeIn'
 import { RootLayout } from '@/components/react-layout/RootLayout'
 
+export const dynamic = 'force-dynamic'
+
 export default function LoginPage() {
   return (
     <RootLayout>
