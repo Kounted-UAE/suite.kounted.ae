@@ -8,41 +8,20 @@ import {
   Page, 
   Text, 
   View, 
-  StyleSheet, 
-  Font
+  StyleSheet
 } from '@react-pdf/renderer'
 
-// Register fonts
-Font.register({
-  family: 'Segoe UI',
-  fonts: [
-    { 
-      src: 'https://fonts.gstatic.com/s/segoeui/v18/NEO-UNFDBD.ttf', 
-      fontWeight: 'normal' 
-    },
-    { 
-      src: 'https://fonts.gstatic.com/s/segoeui/v18/NEO-UNFDBD.ttf', 
-      fontWeight: 'bold' 
-    }
-  ]
-})
-
-// Fallback to Helvetica if Segoe UI fails
-Font.register({
-  family: 'Helvetica',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/helveticaneue/v70/1Ptsg8zYS_SKggPNyC0IT4ttDfA.ttf', fontWeight: 'normal' },
-    { src: 'https://fonts.gstatic.com/s/helveticaneue/v70/1Ptsg8zYS_SKggPNyC0IT4ttDfB.ttf', fontWeight: 'bold' }
-  ]
-})
+// @react-pdf/renderer includes Helvetica by default - no font registration needed
+// The library will use built-in fonts automatically in serverless environments
 
 // Create styles matching the HTML template
+// Note: React PDF StyleSheet uses numbers, not CSS strings
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#ffffff',
     padding: 24,
-    fontFamily: 'Segoe UI',
+    fontFamily: 'Helvetica',
     fontSize: 10,
     color: '#000100'
   },
@@ -60,12 +39,19 @@ const styles = StyleSheet.create({
   },
   // Section styling
   section: {
-    padding: '20px 24px',
-    borderBottom: '0.5px solid #e0e0e0'
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingLeft: 24,
+    paddingRight: 24,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e0e0e0',
+    borderBottomStyle: 'solid'
   },
   sectionLast: {
-    padding: '20px 24px',
-    borderBottom: 'none'
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingLeft: 24,
+    paddingRight: 24
   },
   sectionTitle: {
     fontSize: 12,
@@ -91,7 +77,9 @@ const styles = StyleSheet.create({
   // Green box for earnings/adjustments
   box: {
     backgroundColor: '#f0fdf4',
-    borderLeft: '4px solid #80C041',
+    borderLeftWidth: 4,
+    borderLeftColor: '#80C041',
+    borderLeftStyle: 'solid',
     padding: 12,
     marginTop: 4,
     fontSize: 10,
@@ -100,7 +88,9 @@ const styles = StyleSheet.create({
   // Blue box for final net payment
   boxBlue: {
     backgroundColor: '#f0f9ff',
-    borderLeft: '4px solid #0ea5e9',
+    borderLeftWidth: 4,
+    borderLeftColor: '#0ea5e9',
+    borderLeftStyle: 'solid',
     padding: 12,
     marginTop: 2,
     fontSize: 10,
@@ -122,20 +112,35 @@ const styles = StyleSheet.create({
   },
   // Horizontal rule
   hr: {
-    borderTop: '1px solid #cccccc',
+    borderTopWidth: 1,
+    borderTopColor: '#cccccc',
+    borderTopStyle: 'solid',
     marginTop: 8,
     marginBottom: 8
   },
   // Grid for bank details
   grid2: {
-    flexDirection: 'row',
-    gap: 12
+    flexDirection: 'row'
   },
   gridItem: {
     flex: 1,
     backgroundColor: '#f9f9f9',
-    padding: '12px 16px',
-    borderRadius: 6
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingLeft: 16,
+    paddingRight: 16,
+    borderRadius: 6,
+    marginRight: 6
+  },
+  gridItemLast: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingLeft: 16,
+    paddingRight: 16,
+    borderRadius: 6,
+    marginRight: 0
   },
   gridItemLabel: {
     fontWeight: 500,
@@ -144,8 +149,7 @@ const styles = StyleSheet.create({
   },
   gridItemValue: {
     color: '#000000',
-    fontSize: 10,
-    wordBreak: 'break-word'
+    fontSize: 10
   },
   // Footer
   footer: {
@@ -154,7 +158,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 12,
     marginTop: 20,
-    borderTop: '0.5px solid #dddddd'
+    borderTopWidth: 0.5,
+    borderTopColor: '#dddddd',
+    borderTopStyle: 'solid'
   }
 })
 
@@ -215,7 +221,9 @@ const formatCurrency = (amount: number | undefined, currency: string): string =>
 
 // Helper to render box line (label + value)
 const BoxLine: React.FC<{ label: string; value: number | undefined; currency: string }> = ({ label, value, currency }) => {
-  if (value == null || value === '') return null
+  if (value == null || value === undefined || isNaN(value)) {
+    return null
+  }
   return (
     <View style={styles.boxLine}>
       <Text style={styles.boxLineLabel}>{label}</Text>
@@ -267,15 +275,15 @@ const PayslipDocument: React.FC<GeneratePayslipPDFStyledParams> = ({ employee, b
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Monthly Earnings</Text>
           <View style={styles.box}>
-            <BoxLine label="Basic Salary & Wage" value={employee.basic_salary} currency={currency} />
-            <BoxLine label="Housing Allowance" value={employee.housing_allowance} currency={currency} />
-            <BoxLine label="Transport Allowance" value={employee.transport_allowance} currency={currency} />
-            <BoxLine label="Flight Allowance" value={employee.flight_allowance} currency={currency} />
-            <BoxLine label="Education Allowance" value={employee.education_allowance} currency={currency} />
-            <BoxLine label="General Allowance" value={employee.general_allowance} currency={currency} />
-            <BoxLine label="Other Allowance" value={employee.other_allowance} currency={currency} />
+            {employee.basic_salary != null && <BoxLine label="Basic Salary & Wage" value={employee.basic_salary} currency={currency} />}
+            {employee.housing_allowance != null && <BoxLine label="Housing Allowance" value={employee.housing_allowance} currency={currency} />}
+            {employee.transport_allowance != null && <BoxLine label="Transport Allowance" value={employee.transport_allowance} currency={currency} />}
+            {employee.flight_allowance != null && <BoxLine label="Flight Allowance" value={employee.flight_allowance} currency={currency} />}
+            {employee.education_allowance != null && <BoxLine label="Education Allowance" value={employee.education_allowance} currency={currency} />}
+            {employee.general_allowance != null && <BoxLine label="General Allowance" value={employee.general_allowance} currency={currency} />}
+            {employee.other_allowance != null && <BoxLine label="Other Allowance" value={employee.other_allowance} currency={currency} />}
             <View style={styles.hr} />
-            <BoxLine label="TOTAL EARNINGS" value={employee.total_gross_salary} currency={currency} />
+            {employee.total_gross_salary != null && <BoxLine label="TOTAL EARNINGS" value={employee.total_gross_salary} currency={currency} />}
           </View>
         </View>
 
@@ -283,16 +291,16 @@ const PayslipDocument: React.FC<GeneratePayslipPDFStyledParams> = ({ employee, b
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Other Adjustments</Text>
           <View style={styles.box}>
-            <BoxLine label="Bonuses" value={employee.bonus} currency={currency} />
-            <BoxLine label="Overtime" value={employee.overtime} currency={currency} />
-            <BoxLine label="Arrears/Advances" value={employee.salary_in_arrears} currency={currency} />
-            <BoxLine label="Gratuity/EOSB" value={employee.gratuity_eosb} currency={currency} />
-            <BoxLine label="Unutilised Leave Days Payment" value={employee.unutilised_leave_days_payment} currency={currency} />
-            <BoxLine label="Expense Deductions" value={employee.expenses_deductions} currency={currency} />
-            <BoxLine label="Other Reimbursements" value={employee.other_reimbursements} currency={currency} />
-            <BoxLine label="Expense Reimbursements" value={employee.expense_reimbursements} currency={currency} />
+            {employee.bonus != null && <BoxLine label="Bonuses" value={employee.bonus} currency={currency} />}
+            {employee.overtime != null && <BoxLine label="Overtime" value={employee.overtime} currency={currency} />}
+            {employee.salary_in_arrears != null && <BoxLine label="Arrears/Advances" value={employee.salary_in_arrears} currency={currency} />}
+            {employee.gratuity_eosb != null && <BoxLine label="Gratuity/EOSB" value={employee.gratuity_eosb} currency={currency} />}
+            {employee.unutilised_leave_days_payment != null && <BoxLine label="Unutilised Leave Days Payment" value={employee.unutilised_leave_days_payment} currency={currency} />}
+            {employee.expenses_deductions != null && <BoxLine label="Expense Deductions" value={employee.expenses_deductions} currency={currency} />}
+            {employee.other_reimbursements != null && <BoxLine label="Other Reimbursements" value={employee.other_reimbursements} currency={currency} />}
+            {employee.expense_reimbursements != null && <BoxLine label="Expense Reimbursements" value={employee.expense_reimbursements} currency={currency} />}
             <View style={styles.hr} />
-            <BoxLine label="TOTAL ADJUSTMENTS" value={employee.total_adjustments} currency={currency} />
+            {employee.total_adjustments != null && <BoxLine label="TOTAL ADJUSTMENTS" value={employee.total_adjustments} currency={currency} />}
           </View>
         </View>
 
@@ -300,30 +308,30 @@ const PayslipDocument: React.FC<GeneratePayslipPDFStyledParams> = ({ employee, b
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Net Earnings</Text>
           <View style={styles.box}>
-            <BoxLine label="NET" value={employee.net_salary} currency={currency} />
+            {employee.net_salary != null && <BoxLine label="NET" value={employee.net_salary} currency={currency} />}
           </View>
         </View>
 
         {/* Payment Adjustments Section - Conditional */}
-        {hasPaymentAdjustments && (
-          <>
-            <View style={[styles.section, { padding: '12px 24px' }]}>
+        {hasPaymentAdjustments ? (
+          <View>
+            <View style={[styles.section, { paddingTop: 12, paddingBottom: 12, paddingLeft: 24, paddingRight: 24 }]}>
               <Text style={styles.sectionTitle}>Payment Adjustments</Text>
               <View style={[styles.box, { marginTop: 2 }]}>
-                <BoxLine label="ESOP Deductions" value={employee.esop_deductions} currency={currency} />
+                {employee.esop_deductions != null && <BoxLine label="ESOP Deductions" value={employee.esop_deductions} currency={currency} />}
                 <View style={[styles.hr, { marginTop: 4, marginBottom: 4 }]} />
-                <BoxLine label="TOTAL PAYMENT ADJUSTMENTS" value={employee.total_payment_adjustments} currency={currency} />
+                {employee.total_payment_adjustments != null && <BoxLine label="TOTAL PAYMENT ADJUSTMENTS" value={employee.total_payment_adjustments} currency={currency} />}
               </View>
             </View>
 
-            <View style={[styles.section, { padding: '12px 24px', borderBottom: 'none' }]}>
+            <View style={[styles.section, { paddingTop: 12, paddingBottom: 12, paddingLeft: 24, paddingRight: 24, borderBottomWidth: 0 }]}>
               <Text style={styles.sectionTitle}>Final Net Payment</Text>
               <View style={[styles.boxBlue, { marginTop: 2 }]}>
-                <BoxLine label="FINAL NET PAYMENT" value={employee.net_payment} currency={currency} />
+                {employee.net_payment != null && <BoxLine label="FINAL NET PAYMENT" value={employee.net_payment} currency={currency} />}
               </View>
             </View>
-          </>
-        )}
+          </View>
+        ) : null}
 
         {/* Bank Details Section */}
         <View style={styles.section}>
@@ -333,7 +341,7 @@ const PayslipDocument: React.FC<GeneratePayslipPDFStyledParams> = ({ employee, b
               <Text style={styles.gridItemLabel}>Bank</Text>
               <Text style={styles.gridItemValue}>{employee.bank_name || '-'}</Text>
             </View>
-            <View style={styles.gridItem}>
+            <View style={styles.gridItemLast}>
               <Text style={styles.gridItemLabel}>IBAN</Text>
               <Text style={styles.gridItemValue}>{employee.iban || '-'}</Text>
             </View>
@@ -358,25 +366,35 @@ export async function generatePayslipPDFStyled({
   batchData,
   language
 }: GeneratePayslipPDFStyledParams): Promise<Blob> {
-  const { renderToStream } = await import('@react-pdf/renderer')
-  
-  const stream = await renderToStream(
-    <PayslipDocument employee={employee} batchData={batchData} language={language} />
-  )
-  
-  // Convert stream to blob
-  const chunks: Uint8Array[] = []
-  for await (const chunk of stream) {
-    if (typeof chunk === 'string') {
-      chunks.push(new TextEncoder().encode(chunk))
-    } else if (chunk instanceof Buffer) {
-      chunks.push(new Uint8Array(chunk))
-    } else {
-      chunks.push(chunk as Uint8Array)
+  try {
+    console.log('[generatePayslipPDFStyled] Starting PDF generation')
+    const { renderToStream } = await import('@react-pdf/renderer')
+    
+    console.log('[generatePayslipPDFStyled] Rendering document to stream')
+    const stream = await renderToStream(
+      <PayslipDocument employee={employee} batchData={batchData} language={language} />
+    )
+    
+    console.log('[generatePayslipPDFStyled] Converting stream to blob')
+    // Convert stream to blob
+    const chunks: Uint8Array[] = []
+    for await (const chunk of stream) {
+      if (typeof chunk === 'string') {
+        chunks.push(new TextEncoder().encode(chunk))
+      } else if (chunk instanceof Buffer) {
+        chunks.push(new Uint8Array(chunk))
+      } else {
+        chunks.push(chunk as Uint8Array)
+      }
     }
+    
+    const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' })
+    console.log(`[generatePayslipPDFStyled] Generated PDF blob size: ${blob.size} bytes`)
+    return blob
+  } catch (error) {
+    console.error('[generatePayslipPDFStyled] Error generating PDF:', error)
+    console.error('[generatePayslipPDFStyled] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    throw error // Re-throw to be caught by caller
   }
-  
-  const blob = new Blob(chunks as BlobPart[], { type: 'application/pdf' })
-  return blob
 }
 

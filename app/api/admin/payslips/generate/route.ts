@@ -10,7 +10,8 @@ const STORAGE_FOLDER = '' // Root of Payroll bucket
 
 async function processRowWithStyledPDF(row: any, supabase: any): Promise<{ batch_id: string; ok: boolean; message?: string }> {
   try {
-    console.log(`Processing styled PDF for ${row.id}`)
+    console.log(`[STYLED PDF] Processing styled PDF for ${row.id}`)
+    console.log(`[STYLED PDF] Employee: ${row.employee_name}, Employer: ${row.employer_name}`)
     
     // Generate styled PDF using @react-pdf/renderer
     const pdfBlob = await generatePayslipPDFStyled({
@@ -54,7 +55,9 @@ async function processRowWithStyledPDF(row: any, supabase: any): Promise<{ batch
 
     // Convert blob to buffer for upload
     const pdfBuffer = Buffer.from(await pdfBlob.arrayBuffer())
+    console.log(`[STYLED PDF] Generated PDF buffer size: ${pdfBuffer.length} bytes for ${row.id}`)
     
+    // Always regenerate - use existing token if present, otherwise create new one
     const token = row.payslip_token || crypto.randomUUID()
     const filename = generatePayslipFilename(row.employee_name || 'unknown', token)
     const storagePath = STORAGE_FOLDER ? `${STORAGE_FOLDER}/${filename}` : filename
@@ -96,7 +99,14 @@ async function processRowWithStyledPDF(row: any, supabase: any): Promise<{ batch
     return { batch_id: row.id, ok: true, message: 'Generated using styled PDF (react-pdf)' }
     
   } catch (error) {
-    console.error(`Styled PDF processing failed for ${row.id}:`, error)
+    console.error(`[STYLED PDF] Processing failed for ${row.id}:`, error)
+    console.error(`[STYLED PDF] Error stack:`, error instanceof Error ? error.stack : 'No stack trace')
+    console.error(`[STYLED PDF] Error details:`, {
+      message: error instanceof Error ? error.message : String(error),
+      name: error instanceof Error ? error.name : 'Unknown',
+      rowId: row.id,
+      employeeName: row.employee_name
+    })
     return { 
       batch_id: row.id, 
       ok: false, 
@@ -243,15 +253,18 @@ export async function POST(req: NextRequest) {
   const results: { batch_id: string; ok: boolean; message?: string }[] = []
 
   for (const row of rows ?? []) {
-    // Try styled PDF generation first
+    // Always try styled PDF generation first (even if PDF already exists)
+    // The upsert: true flag in upload will replace existing files
+    console.log(`[MAIN] Processing row ${row.id} - will regenerate PDF even if exists`)
     const result = await processRowWithStyledPDF(row, supabase)
     
     // If styled PDF fails, try fallback
     if (!result.ok) {
-      console.log(`Styled PDF failed for ${row.id}, attempting fallback`)
+      console.log(`[MAIN] Styled PDF failed for ${row.id}, attempting fallback`)
       const fallbackResult = await processRowWithFallback(row, supabase)
       results.push(fallbackResult)
     } else {
+      console.log(`[MAIN] Successfully generated styled PDF for ${row.id}`)
       results.push(result)
     }
   }

@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit",
     "supabase:types": "tsx lib/scripts/extract-supabase-types.ts",
     "sync-teamwork": "tsx scripts/sync-teamwork-tasks.ts",
-    "migrate-payslips": "tsx scripts/migrate-payslip-filenames.ts",
+    "migrate-payslips": "tsx scripts/migrate-payslip-filenames.ts"
   },
   "dependencies": {
     "@geist-ui/react": "^2.2.5",
