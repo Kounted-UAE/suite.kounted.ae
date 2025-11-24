@@ -1,16 +1,25 @@
 'use client'
 
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { toast } from '@/hooks/use-toast'
 import type { IngestRow } from '@/lib/types/payrollIngest'
 
 // Lazy import to avoid hard dependency during initial wiring; the project will add the package later
 let DataEditor: any
-try {
-  // @ts-ignore
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  DataEditor = require('@glideapps/glide-data-grid').DataEditor
-} catch {}
+let glideDataGridLoaded = false
+
+const loadGlideDataGrid = async () => {
+  if (glideDataGridLoaded || DataEditor) return
+  try {
+    if (typeof window !== 'undefined') {
+      const module = await import('@glideapps/glide-data-grid')
+      DataEditor = module.DataEditor
+      glideDataGridLoaded = true
+    }
+  } catch {
+    // Package not available, will use fallback
+  }
+}
 
 type Props = {
   rows: IngestRow[]
@@ -20,6 +29,13 @@ type Props = {
 
 export default function PayrollIngestGrid({ rows, onChangeCell, visibleColumns }: Props) {
   const [editingKey, setEditingKey] = useState<string | null>(null)
+  const [isGlideLoaded, setIsGlideLoaded] = useState(false)
+
+  useEffect(() => {
+    loadGlideDataGrid().then(() => {
+      setIsGlideLoaded(true)
+    })
+  }, [])
 
   const handleCellEdited = useCallback(async (rowIdx: number, colIdx: number, rawValue: any) => {
     const row = rows[rowIdx]
@@ -35,7 +51,7 @@ export default function PayrollIngestGrid({ rows, onChangeCell, visibleColumns }
   }, [rows, visibleColumns, onChangeCell])
 
   // Fallback simple table if glide grid is not available (during CI or until dependency is installed)
-  if (!DataEditor) {
+  if (!isGlideLoaded || !DataEditor) {
     return (
       <div className="overflow-auto border rounded-md">
         <table className="w-full text-sm">
