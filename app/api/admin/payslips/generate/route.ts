@@ -252,9 +252,33 @@ export async function POST(req: NextRequest) {
     timeout: 30000, // 30 second timeout
   }
 
-  // For Vercel deployment, set the executable path
-  if (process.env.VERCEL) {
-    puppeteerConfig.executablePath = '/usr/bin/google-chrome-stable'
+  // Use Puppeteer's executable path (works for both local and Vercel)
+  // Puppeteer automatically finds Chrome installed via `npx puppeteer browsers install chrome`
+  // Only override if explicitly set via environment variable
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    puppeteerConfig.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH
+    console.log('Using Chrome executable from PUPPETEER_EXECUTABLE_PATH:', puppeteerConfig.executablePath)
+  } else if (process.env.VERCEL) {
+    // On Vercel, try to find Chrome in the Puppeteer cache directory
+    // The postinstall script installs Chrome to /vercel/.cache/puppeteer/chrome/...
+    try {
+      const puppeteerCachePath = '/vercel/.cache/puppeteer'
+      const cacheContents = await fs.readdir(puppeteerCachePath)
+      const chromeDir = cacheContents.find(dir => dir.startsWith('chrome'))
+      if (chromeDir) {
+        const chromePath = `${puppeteerCachePath}/${chromeDir}/chrome-linux64/chrome`
+        try {
+          await fs.access(chromePath)
+          puppeteerConfig.executablePath = chromePath
+          console.log('Found Chrome at:', chromePath)
+        } catch {
+          console.warn('Chrome path found but not accessible:', chromePath)
+        }
+      }
+    } catch (error) {
+      console.warn('Could not find Chrome in Puppeteer cache, Puppeteer will try to find it automatically:', error)
+      // Let Puppeteer find it automatically - it should work if installed correctly
+    }
   }
 
   let browser
