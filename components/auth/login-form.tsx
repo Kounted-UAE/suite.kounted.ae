@@ -52,6 +52,7 @@ export default function LoginForm() {
     try {
       const { error: otpError } = await signInWithOTP(email)
       if (otpError) {
+        console.error('OTP login error:', otpError)
         setError(otpError.message || 'Failed to send login code. Please try again.')
       } else {
         setSuccess('Login code sent! Check your email.')
@@ -72,10 +73,11 @@ export default function LoginForm() {
     setSuccess(null)
     
     try {
-      const { user, session, error } = await signInWithPassword(email, password)
+      const { data, error } = await signInWithPassword(email, password)
       if (error) {
+        console.error('Password login error:', error)
         setError(error.message || 'Invalid email or password. Please try again.')
-      } else if (user && session) {
+      } else if (data?.user && data?.session) {
         setSuccess('Login successful! Redirecting...')
         setTimeout(() => router.push('/suite'), 1000)
       } else {
@@ -96,10 +98,11 @@ export default function LoginForm() {
     setSuccess(null)
     
     try {
-      const { user, session, error: authError } = await verifyOTP(email, otpToken)
+      const { data, error: authError } = await verifyOTP(email, otpToken)
       if (authError) {
+        console.error('OTP verification error:', authError)
         setError(authError.message || 'Invalid code. Please try again.')
-      } else if (user && session) {
+      } else if (data?.user && data?.session) {
         setSuccess('Login successful! Redirecting...')
         setTimeout(() => router.push('/suite'), 1000)
       } else {

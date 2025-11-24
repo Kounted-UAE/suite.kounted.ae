@@ -73,10 +73,12 @@ function ResetPasswordForm() {
     }
 
     const { error } = await updateUserPassword(password)
-    if (error) setError(error.message)
-    else {
+    if (error) {
+      console.error('Update password error:', error)
+      setError(error.message)
+    } else {
       setSuccess('Password updated. Redirecting to login...')
-      setTimeout(() => router.push('/auth/login'), 1500)
+      setTimeout(() => router.push('/'), 1500)
     }
     setLoading(false)
   }

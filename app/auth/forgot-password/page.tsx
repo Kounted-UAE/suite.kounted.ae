@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
                 <Button type="submit" disabled={loading} className="w-full">
                   {loading ? 'Sending...' : 'Send reset link'}
                 </Button>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => router.push('/auth/login')}>
+                <Button type="button" variant="ghost" className="w-full" onClick={() => router.push('/')}>
                   Back to login
                 </Button>
               </form>

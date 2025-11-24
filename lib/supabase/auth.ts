@@ -40,11 +40,7 @@ export async function signInWithOtp(email: string) {
     },
   })
 
-  if (error) {
-    throw error
-  }
-
-  return data
+  return { data, error }
 }
 
 // Alias for backwards compatibility
@@ -57,8 +53,7 @@ export async function verifyOTP(email: string, token: string) {
     token,
     type: 'email',
   })
-  if (error) throw error
-  return data
+  return { data, error }
 }
 
 export async function sendResetPasswordEmail(email: string, redirectTo?: string) {
@@ -66,8 +61,7 @@ export async function sendResetPasswordEmail(email: string, redirectTo?: string)
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: redirectTo || `${window.location.origin}/auth/callback`,
   })
-  if (error) throw error
-  return data
+  return { data, error }
 }
 
 export async function updateUserPassword(newPassword: string) {
@@ -75,8 +69,7 @@ export async function updateUserPassword(newPassword: string) {
   const { data, error } = await supabase.auth.updateUser({
     password: newPassword,
   })
-  if (error) throw error
-  return data
+  return { data, error }
 }
 
 export async function signOut() {
