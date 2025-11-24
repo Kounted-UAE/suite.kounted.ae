@@ -85,6 +85,16 @@ const nextConfig = {
       '@icons': resolve(__dirname, 'public/icons'),
     }
     
+    // Ensure TypeScript/TSX extensions are resolved
+    config.resolve.extensions = [
+      '.tsx',
+      '.ts',
+      '.jsx',
+      '.js',
+      '.json',
+      ...(config.resolve.extensions || [])
+    ]
+    
     // Production optimizations
     if (!dev && !isServer) {
       config.optimization = {
