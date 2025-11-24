@@ -1,6 +1,7 @@
 /**
- * Fallback PDF generation using @react-pdf/renderer
- * This is used when Puppeteer fails in production environments
+ * Ultimate fallback PDF generation using pdf-lib
+ * This is used when the styled PDF generator (@react-pdf/renderer) fails
+ * Creates a basic unstyled PDF as a last resort
  */
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 

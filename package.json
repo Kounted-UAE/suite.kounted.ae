@@ -12,7 +12,6 @@
     "supabase:types": "tsx lib/scripts/extract-supabase-types.ts",
     "sync-teamwork": "tsx scripts/sync-teamwork-tasks.ts",
     "migrate-payslips": "tsx scripts/migrate-payslip-filenames.ts",
-    "postinstall": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
     "@geist-ui/react": "^2.2.5",
@@ -83,7 +82,6 @@
     "openai": "^5.11.0",
     "papaparse": "^5.5.3",
     "pdf-lib": "^1.17.1",
-    "puppeteer": "^24.15.0",
     "radix-ui": "^1.4.2",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
