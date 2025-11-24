@@ -27,9 +27,13 @@ export default function LoginForm() {
   useEffect(() => {
     const errorParam = searchParams.get('error')
     if (errorParam) {
-      setError(decodeURIComponent(errorParam))
+      const decodedError = decodeURIComponent(errorParam)
+      // Only set error if it's a valid string
+      if (decodedError && decodedError !== '{}' && decodedError.trim() !== '') {
+        setError(decodedError)
+      }
       // Clear the error from URL
-      router.replace('/auth/login', { scroll: false })
+      router.replace('/', { scroll: false })
     }
   }, [searchParams, router])
 

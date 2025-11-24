@@ -2,6 +2,8 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSupabaseServerClient } from '@/lib/supabase/server'
 
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
@@ -10,7 +12,7 @@ export async function GET(request: NextRequest) {
   // If there is no code, send user back to login
   if (!code) {
     return NextResponse.redirect(
-      new URL('/auth/login?error=missing_code', url.origin),
+      new URL('/?error=Missing authentication code', url.origin),
     )
   }
 
@@ -20,11 +22,10 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     // invalid/expired code – send back to login with message
-    const params = new URLSearchParams({
-      error: 'invalid_or_expired_link',
-    })
+    console.error('Code exchange error:', error)
+    const errorMessage = encodeURIComponent('Invalid or expired link. Please request a new one.')
     return NextResponse.redirect(
-      new URL(`/auth/login?${params.toString()}`, url.origin),
+      new URL(`/?error=${errorMessage}`, url.origin),
     )
   }
 

@@ -75,14 +75,12 @@ export async function updateUserPassword(newPassword: string) {
 export async function signOut() {
   const supabase = getBrowserClient()
   const { error } = await supabase.auth.signOut()
-  if (error) throw error
-  return true
+  return { error }
 }
 
 // Optional: password-based sign-in if you use it
 export async function signInWithPassword(email: string, password: string) {
   const supabase = getBrowserClient()
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) throw error
-  return data
+  return { data, error }
 }
