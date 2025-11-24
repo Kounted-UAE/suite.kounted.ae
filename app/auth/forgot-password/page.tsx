@@ -24,7 +24,8 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     setError(null)
     setSuccess(null)
-    const redirectTo = `${window.location.origin}/auth/reset-password`
+    // Redirect to callback route - it will handle code exchange and redirect to reset-password
+    const redirectTo = `${window.location.origin}/auth/callback`
     const { error } = await sendResetPasswordEmail(email, redirectTo)
     if (error) setError(error.message)
     else setSuccess('Reset link sent. Check your inbox.')

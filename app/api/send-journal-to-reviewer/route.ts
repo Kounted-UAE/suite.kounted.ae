@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
       `${prettyType} Review Required - ${employer}${
         payrollPeriod ? ` (${payrollPeriod})` : ''
       }`
+    
+    // Get app URL from environment variable with fallback
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://suite.kounted.ae'
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -148,7 +151,7 @@ export async function POST(req: NextRequest) {
   </div>
 
   <div class="footer">
-    Powered by <a href="https://www.kounted.com" target="_blank">kounted Web Forms</a><br>
+    Powered by <a href="${appUrl}" target="_blank">kounted Web Forms</a><br>
     This email was sent on behalf of Kounted Accounting and Management Solutions.
   </div>
 </body>
@@ -184,7 +187,7 @@ export async function POST(req: NextRequest) {
       Team kounted
 
       ---
-      Powered by Kounted Web Forms.
+      Powered by Kounted Web Forms (${appUrl}).
       This email was sent on behalf of Kounted Accounting and Management Solutions.
     `
 

@@ -3,9 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.NODE_ENV === 'production' 
-    ? "https://www.kounted.com" 
-    : "http://localhost:3000",
+  "Access-Control-Allow-Origin": process.env.NEXT_PUBLIC_APP_URL || process.env.ALLOWED_ORIGIN || (process.env.NODE_ENV === 'production' 
+    ? "https://suite.kounted.ae" 
+    : "http://localhost:3000"),
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
