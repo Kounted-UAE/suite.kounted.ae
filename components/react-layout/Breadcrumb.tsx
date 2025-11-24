@@ -279,7 +279,7 @@ const SidebarTrigger = React.forwardRef<
       }}
       {...props}
     >
-      <KountedLogo className="h-6 w-6 bg-white/90 p-1 rounded-xs" />
+      <KountedLogo className="h-4 w-4 bg-white/90 p-1 rounded-xs" />
       <span className="sr-only ">Toggle Sidebar</span>
     </Button>
   )

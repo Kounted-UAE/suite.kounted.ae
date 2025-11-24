@@ -103,7 +103,7 @@ export default function PayrollIngestPage() {
       <PageHeader
         title="Payroll Ingest"
         description="View and manage imported payroll data. Search, filter, and export payroll records for processing."
-        breadcrumbs="Payroll Suite"
+        breadcrumbs="Payroll Deck"
         actions={
           <Button onClick={handleExport}>
             Export

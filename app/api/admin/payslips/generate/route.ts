@@ -13,7 +13,7 @@ async function processRowWithStyledPDF(row: any, supabase: any): Promise<{ batch
     console.log(`[STYLED PDF] Processing styled PDF for ${row.id}`)
     console.log(`[STYLED PDF] Employee: ${row.employee_name}, Employer: ${row.employer_name}`)
     
-    // Generate styled PDF using @react-pdf/renderer
+    // Generate styled PDF using pdf-lib
     const pdfBlob = await generatePayslipPDFStyled({
       employee: {
         id: row.id,
@@ -42,6 +42,8 @@ async function processRowWithStyledPDF(row: any, supabase: any): Promise<{ batch
         net_payment: row.net_payment,
         bank_name: row.bank_name,
         iban: row.iban,
+        wps_fees: row.wps_fees,
+        total_to_transfer: row.total_to_transfer,
         currency: (row.currency || 'AED') as string
       },
       batchData: {
@@ -96,7 +98,7 @@ async function processRowWithStyledPDF(row: any, supabase: any): Promise<{ batch
     }
 
     console.log(`Successfully processed styled PDF for ${row.id}`)
-    return { batch_id: row.id, ok: true, message: 'Generated using styled PDF (react-pdf)' }
+    return { batch_id: row.id, ok: true, message: 'Generated using styled PDF (pdf-lib)' }
     
   } catch (error) {
     console.error(`[STYLED PDF] Processing failed for ${row.id}:`, error)
@@ -125,6 +127,7 @@ async function processRowWithFallback(row: any, supabase: any): Promise<{ batch_
         email_id: row.email_id,
         basic_salary: row.basic_salary,
         housing_allowance: row.housing_allowance,
+        transport_allowance: row.transport_allowance,
         education_allowance: row.education_allowance,
         flight_allowance: row.flight_allowance,
         general_allowance: row.general_allowance,
@@ -143,6 +146,10 @@ async function processRowWithFallback(row: any, supabase: any): Promise<{ batch_
         esop_deductions: row.esop_deductions,
         total_payment_adjustments: row.total_payment_adjustments,
         net_payment: row.net_payment,
+        bank_name: row.bank_name,
+        iban: row.iban,
+        wps_fees: row.wps_fees,
+        total_to_transfer: row.total_to_transfer,
         currency: (row.currency || 'AED') as string
       },
       batchData: {
@@ -248,7 +255,7 @@ export async function POST(req: NextRequest) {
   
   console.log(`Found ${rows?.length || 0} rows to process`)
 
-  console.log('Using styled PDF generation with @react-pdf/renderer')
+    console.log('Using styled PDF generation with pdf-lib')
   
   const results: { batch_id: string; ok: boolean; message?: string }[] = []
 

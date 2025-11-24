@@ -206,7 +206,7 @@ export default function LoginForm() {
       <p className="text-center text-xs text-zinc-400 mt-2">
         Need help?{' '}
         <a 
-          href="mailto:info@kounted.com" 
+          href="mailto:support@kounted.ae" 
           className="text-zinc-500 underline hover:text-zinc-600"
         >
           Contact support

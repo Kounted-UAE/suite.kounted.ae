@@ -79,6 +79,12 @@ export default {
 					'3': 'var(--chart-3)',
 					'4': 'var(--chart-4)',
 					'5': 'var(--chart-5)'
+				},
+				kounted: {
+					green: 'var(--kounted-green)',
+					charcoal: 'var(--kounted-charcoal)',
+					dark: 'var(--kounted-dark)',
+					light: 'var(--kounted-light)'
 				}
 			},
 			  keyframes: {

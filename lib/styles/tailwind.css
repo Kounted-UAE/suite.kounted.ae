@@ -43,4 +43,10 @@
 
   /* Border radius */
   --radius: 0.5rem;
+
+  /* Kounted brand colors */
+  --kounted-green: #80C041;
+  --kounted-charcoal: #0B4624;
+  --kounted-dark: #094213;
+  --kounted-light: #F6F9F3;
 }

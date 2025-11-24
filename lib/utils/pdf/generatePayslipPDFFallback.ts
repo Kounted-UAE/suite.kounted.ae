@@ -1,6 +1,6 @@
 /**
  * Ultimate fallback PDF generation using pdf-lib
- * This is used when the styled PDF generator (@react-pdf/renderer) fails
+ * This is used when the styled PDF generator (pdf-lib) fails
  * Creates a basic unstyled PDF as a last resort
  */
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
@@ -11,12 +11,13 @@ interface EmployeeData {
   email_id?: string
   basic_salary?: number
   housing_allowance?: number
+  transport_allowance?: number
   education_allowance?: number
   flight_allowance?: number
   general_allowance?: number
   gratuity_eosb?: number
   other_allowance?: number
-  total_fixed_salary?: number
+  total_fixed_salary?: number // Maps to total_gross_salary in styled version
   bonus?: number
   overtime?: number
   salary_in_arrears?: number
@@ -24,11 +25,13 @@ interface EmployeeData {
   expenses_deductions?: number
   other_reimbursements?: number
   expense_reimbursements?: number
-  total_variable_salary?: number
-  total_salary?: number
+  total_variable_salary?: number // Maps to total_adjustments in styled version
+  total_salary?: number // Maps to net_salary in styled version
   esop_deductions?: number
   total_payment_adjustments?: number
   net_payment?: number
+  bank_name?: string
+  iban?: string
   wps_fees?: number
   total_to_transfer?: number
   currency?: string

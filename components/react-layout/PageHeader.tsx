@@ -35,9 +35,9 @@ export function PageHeader({
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
+          <h1 className="text-xs text-green-600 font-semibold">{title}</h1>
           {description ? (
-            <p className="max-w-2xl text-sm text-slate-500">{description}</p>
+            <p className="max-w-2xl text-xs text-black font-medium">{description}</p>
           ) : null}
         </div>
         {actions ? <div className="flex items-center gap-2">{actions}</div> : null}

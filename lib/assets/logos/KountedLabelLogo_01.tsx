@@ -2,6 +2,7 @@
 'use client'
 
 import React from 'react'
+import { KountedColors } from '@/lib/config/colors'
 
 export interface KountedLabelLogoProps extends React.SVGProps<SVGSVGElement> {
   width?: number
@@ -72,15 +73,15 @@ export function KountedLabelLogoLight({
       {/* the three green “K”-icon shapes */}
       <path
         d="M409.223 146.022C411.861 146.022 414 143.882 414 141.243C414 138.603 411.861 136.463 409.223 136.463C406.584 136.463 404.445 138.603 404.445 141.243C404.445 143.882 406.584 146.022 409.223 146.022Z"
-        fill="#80C041"
+        fill={KountedColors.green}
       />
       <path
         d="M31.49 86.6889L17.7567 96.3068C15.5411 97.8585 15.3964 101.089 17.4642 102.833L69.8763 147.03C70.619 147.656 71.5591 148 72.5305 148H85.2446C86.0127 148 86.3627 147.041 85.7754 146.546L30.6729 100.08C30.2559 99.7281 30.2894 99.0754 30.7403 98.7684L31.49 98.258V86.6889Z"
-        fill="#80C041"
+        fill={KountedColors.green}
       />
       <path
         d="M49.6108 73.9981V85.9198L86.9364 60.5053C87.6067 60.0489 87.2838 59 86.473 59H73.8824C72.0235 59 70.2095 59.5721 68.6866 60.6386L49.6108 73.9981Z"
-        fill="#80C041"
+        fill={KountedColors.green}
       />
       <path
         d="M36.432 59C35.5222 59 34.7847 59.7379 34.7847 60.6481V99.5116L46.3161 108.854V60.6481C46.3161 59.7379 45.5786 59 44.6688 59H36.432Z"

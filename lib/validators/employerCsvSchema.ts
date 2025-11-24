@@ -45,7 +45,7 @@ export const EMPLOYER_CSV_TEMPLATE = [
 
 export const EMPLOYER_EXAMPLE_ROW = {
   legal_name: "kounted Accounting Services Ltd",
-  email: "info@kounted.ae",
+  email: "support@kounted.ae",
   phone: "+971501234567",
   mohre_id: "MOHRE123",
   bank_name: "Emirates NBD",

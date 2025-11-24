@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     await resend.emails.send({
       from: 'Online Notifications <notifications@kounted.ae>',
-      to: 'info@kounted.com',
+      to: 'support@kounted.ae',
       subject: 'New Feature Request',
       html,
       replyTo: email,

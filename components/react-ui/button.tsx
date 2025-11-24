@@ -13,6 +13,8 @@ const buttonVariants = cva(
           "bg-gradient-to-br from-zinc-600 to-zinc-500 text-white shadow-sm hover:from-zinc-500 hover:to-zinc-600",
           emphasis:
             "bg-gradient-to-br from-zinc-500 to-zinc-400 text-white shadow-sm hover:from-zinc-600 hover:to-zinc-700",
+        green:
+          "bg-kounted-green text-white shadow-sm hover:bg-green-600",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:

@@ -1,6 +1,7 @@
 // components/react-core/KountedLogo.tsx
 
 import * as React from 'react'
+import { KountedColors } from '@/lib/config/colors'
 
 interface KountedLogoProps extends React.SVGProps<SVGSVGElement> {
   variant?: 'dark' | 'light' | 'grey' | 'white'
@@ -19,16 +20,16 @@ export const KountedLogo = ({
 }: KountedLogoProps) => {
   const colorMap = {
     dark: {
-      text: '#25292A',     // Charcoal
-      accent: '#80C041',   // Lime-green K
+      text: KountedColors.charcoal,
+      accent: KountedColors.green,
     },
     light: {
       text: '#FFFFFF',
-      accent: '#80C041',
+      accent: KountedColors.green,
     },
     grey: {
-      text: '#25292A',
-      accent: '#25292A',
+      text: KountedColors.charcoal,
+      accent: KountedColors.charcoal,
     },
     white: {
       text: '#FFFFFF',

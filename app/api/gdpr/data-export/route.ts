@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
       gdpr_compliance: {
         legal_basis: 'Article 20 GDPR - Right to data portability',
         data_controller: 'kounted Digital Solutions',
-        contact_dpo: 'info@kounted.com',
+        contact_dpo: 'support@kounted.ae',
         retention_policy: 'Data retained as per our Privacy Policy and applicable UAE/EU regulations',
         your_rights: [
           'Right to rectification (Article 16)',

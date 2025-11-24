@@ -111,7 +111,7 @@ export default function SendPayslipsPage() {
       <PageHeader
         title="Send Payslips"
         description="Generate payslips, send emails to employees, and manage payroll distribution for all employers."
-        breadcrumbs="Payroll Suite"
+        breadcrumbs="Payroll Deck"
         actions={
           <div className="flex items-center gap-2">
             <Button 
@@ -121,7 +121,7 @@ export default function SendPayslipsPage() {
             >
               {showDeleted ? "Show Active" : "Show Deleted"}
             </Button>
-            <Button size="sm" onClick={() => setImportOpen(true)}>
+            <Button size="sm" variant="green" onClick={() => setImportOpen(true)}>
               Import Rows
             </Button>
           </div>

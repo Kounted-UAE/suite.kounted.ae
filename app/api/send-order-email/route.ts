@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
             <p style="color: #666; font-size: 14px;">
               Best regards,<br>
               The Order Management Team<br>
-              <a href="mailto:orders@example.com" style="color: #0066cc;">orders@example.com</a>
+              <a href="mailto:support@kounted.ae" style="color: #0066cc;">support@kounted.ae</a>
             </p>
           </div>
         </div>

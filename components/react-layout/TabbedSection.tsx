@@ -102,9 +102,11 @@ export function TabbedSection({
                   value={tab.value}
                   disabled={tab.disabled}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-500 transition-colors",
-                    "hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-300",
-                    "data-[state=active]:bg-gray-100 data-[state=active]:text-gray-700"
+                    "inline-flex items-center gap-2 rounded-md px-4 py-2 text-xs font-medium transition-colors",
+                    "text-zinc-700 hover:text-zinc-700/80",
+                    "data-[state=active]:bg-gradient-to-br data-[state=active]:from-zinc-600 data-[state=active]:to-zinc-500 data-[state=active]:text-white data-[state=active]:shadow-sm",
+                    "data-[state=active]:hover:from-zinc-500 data-[state=active]:hover:to-zinc-600",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-zinc-300"
                   )}
                 >
                   {Icon ? <Icon className="h-4 w-4" /> : null}

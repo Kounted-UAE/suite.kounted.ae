@@ -385,8 +385,8 @@ export function GDPRDataRights() {
             <AlertDescription className="text-sm">
               To exercise any of these rights or if you have questions about data processing, 
               contact our Data Protection Officer at{' '}
-              <a href="mailto:privacy@kounted.com" className="text-primary hover:underline">
-                privacy@kounted.com
+              <a href="mailto:support@kounted.ae" className="text-primary hover:underline">
+                support@kounted.ae
               </a>
             </AlertDescription>
           </Alert>

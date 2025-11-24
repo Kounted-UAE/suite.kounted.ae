@@ -10,7 +10,6 @@ import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { motion, MotionConfig, useReducedMotion } from 'framer-motion'
 
-import { Button } from '@/components/react-layout/Button'
 import { Container } from '@/components/react-layout/Container'
 import { Footer } from '@/components/react-layout/Footer'
 import { GridPattern } from '@/components/react-layout/GridPattern'
@@ -31,24 +30,19 @@ function Header({
 
   return (
     <Container>
-      <div className="flex items-center justify-between gap-x-4">
+      <div className="flex items-center justify-center gap-x-4">
         <Link
           href="/"
           aria-label="Kounted Business Suite"
           onMouseEnter={() => setLogoHovered(true)}
           onMouseLeave={() => setLogoHovered(false)}
         >
-                   <KountedLogo
+          <KountedLogo
             className="h-12 sm:h-32"
             variant={invert ? 'light' : 'dark'}
             fill={logoHovered ? 'white' : 'black'}
           />
         </Link>
-        <div className="flex items-center gap-x-8">
-          <Button href="/auth/login" invert={invert}>
-            Login
-          </Button>
-        </div>
       </div>
     </Container>
   )
