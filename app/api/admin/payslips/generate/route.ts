@@ -283,17 +283,30 @@ export async function POST(req: NextRequest) {
 
   let browser
   try {
+    console.log('Attempting to launch Puppeteer with config:', JSON.stringify({
+      headless: puppeteerConfig.headless,
+      executablePath: puppeteerConfig.executablePath || 'auto-detect',
+      argsCount: puppeteerConfig.args?.length || 0
+    }))
     browser = await puppeteer.launch(puppeteerConfig)
-    console.log('Browser launched successfully')
+    console.log('✅ Browser launched successfully!')
+    const browserVersion = await browser.version()
+    console.log(`Browser version: ${browserVersion}`)
   } catch (browserError) {
-    console.error('Failed to launch Puppeteer browser:', browserError)
+    console.error('❌ Failed to launch Puppeteer browser')
+    console.error('Error details:', {
+      message: browserError instanceof Error ? browserError.message : String(browserError),
+      stack: browserError instanceof Error ? browserError.stack : undefined,
+      executablePath: puppeteerConfig.executablePath,
+      isVercel: !!process.env.VERCEL
+    })
     // If browser launch fails, we'll use fallback for all rows
-    console.log('Using fallback PDF generation for all rows due to browser launch failure')
+    console.log('⚠️ Using fallback PDF generation for all rows due to browser launch failure')
     const fallbackResults = await processAllWithFallback(rows || [], supabase, template)
     return NextResponse.json({ 
       success: true, 
       results: fallbackResults,
-      message: 'Generated using fallback method due to browser issues'
+      message: 'Generated using fallback method due to browser issues. Check Vercel function logs for details.'
     })
   }
   
@@ -304,17 +317,22 @@ export async function POST(req: NextRequest) {
       const page = await browser.newPage()
       
       try {
+        console.log(`Processing row ${row.id} with Puppeteer (HTML template method)`)
         const html = renderHtml(template, row)
+        console.log(`Rendered HTML template for ${row.id}, HTML length: ${html.length} characters`)
+        
         await page.setContent(html, { 
           waitUntil: 'networkidle0',
           timeout: 10000 // 10 second timeout for page load
         })
+        console.log(`HTML content loaded into Puppeteer page for ${row.id}`)
 
         const pdfBuffer = await page.pdf({ 
           format: 'A4', 
           printBackground: true,
           timeout: 15000 // 15 second timeout for PDF generation
         })
+        console.log(`PDF generated successfully for ${row.id}, buffer size: ${pdfBuffer.length} bytes`)
         
         await page.close()
 
@@ -340,15 +358,24 @@ export async function POST(req: NextRequest) {
           .getPublicUrl(storagePath)
 
         const publicUrl = publicUrlData?.publicUrl
+        console.log(`Successfully generated PDF with Puppeteer for ${row.id}, uploading to: ${storagePath}`)
         const { error: updateError } = await supabase
           .from('payroll_excel_imports')
-          .update({ payslip_url: publicUrl, payslip_token: token })
+          .update({ 
+            payslip_url: publicUrl, 
+            payslip_token: token,
+            payslip_filename: filename,
+            payslip_generated_at: new Date().toISOString(),
+            payslip_generation_method: 'puppeteer'
+          })
           .eq('id', row.id)
 
         if (updateError) {
+          console.error(`Database update error for ${row.id}:`, updateError)
           results.push({ batch_id: row.id, ok: false, message: updateError.message })
         } else {
-          results.push({ batch_id: row.id, ok: true })
+          console.log(`Successfully completed Puppeteer PDF generation for ${row.id}`)
+          results.push({ batch_id: row.id, ok: true, message: 'Generated using Puppeteer (styled HTML)' })
         }
       } catch (pageError) {
         console.error(`Error processing row ${row.id} with Puppeteer:`, pageError)
@@ -411,13 +438,21 @@ export async function POST(req: NextRequest) {
             const publicUrl = publicUrlData?.publicUrl
             const { error: updateError } = await supabase
               .from('payroll_excel_imports')
-              .update({ payslip_url: publicUrl, payslip_token: token })
+              .update({ 
+                payslip_url: publicUrl, 
+                payslip_token: token,
+                payslip_filename: filename,
+                payslip_generated_at: new Date().toISOString(),
+                payslip_generation_method: 'fallback'
+              })
               .eq('id', row.id)
 
             if (updateError) {
+              console.error(`Fallback database update error for ${row.id}:`, updateError)
               results.push({ batch_id: row.id, ok: false, message: `Fallback update failed: ${updateError.message}` })
             } else {
-              results.push({ batch_id: row.id, ok: true, message: 'Generated using fallback method' })
+              console.log(`Successfully completed fallback PDF generation for ${row.id}`)
+              results.push({ batch_id: row.id, ok: true, message: 'Generated using fallback method (unstyled)' })
             }
           }
         } catch (fallbackError) {

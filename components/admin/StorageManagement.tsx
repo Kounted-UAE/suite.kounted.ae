@@ -35,7 +35,10 @@ import {
   ChevronRight,
   ChevronDown,
   Search,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/react-ui/select'
 import { cn } from '@/lib/utils'
@@ -69,6 +72,8 @@ export default function StorageManagement() {
   const [fileToDelete, setFileToDelete] = useState<{ path: string; name: string } | null>(null)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<string>('name')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [supabase, setSupabase] = useState<ReturnType<typeof getSupabaseClient> | null>(null)
 
@@ -371,6 +376,65 @@ export default function StorageManagement() {
     return folder.toLowerCase().includes(query)
   })
 
+  // Sort files
+  const sortedFiles = [...filteredFiles].sort((a, b) => {
+    let aVal: any
+    let bVal: any
+
+    switch (sortBy) {
+      case 'name':
+        aVal = a.name.toLowerCase()
+        bVal = b.name.toLowerCase()
+        break
+      case 'size':
+        aVal = a.metadata?.size || 0
+        bVal = b.metadata?.size || 0
+        break
+      case 'lastModified':
+        aVal = new Date(a.updated_at).getTime()
+        bVal = new Date(b.updated_at).getTime()
+        break
+      default:
+        return 0
+    }
+
+    if (typeof aVal === 'string') {
+      return sortDir === 'asc'
+        ? aVal.localeCompare(bVal)
+        : bVal.localeCompare(aVal)
+    } else {
+      return sortDir === 'asc' ? aVal - bVal : bVal - aVal
+    }
+  })
+
+  // Sort handler
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      setSortDir('asc')
+    }
+  }
+
+  // Sort icon component
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortBy !== field) return <ArrowUpDown className="h-3 w-3 opacity-50" />
+    return sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+  }
+
+  // Header button component
+  const HeaderButton = ({ field, label }: { field: string; label: string }) => (
+    <button
+      className="inline-flex items-center gap-1 hover:underline text-inherit"
+      onClick={() => handleSort(field)}
+      type="button"
+    >
+      <span>{label}</span>
+      <SortIcon field={field} />
+    </button>
+  )
+
   return (
     <div className="space-y-6 relative">
       {/* Uploading Overlay */}
@@ -500,12 +564,12 @@ export default function StorageManagement() {
           {selectedBucket && (
             <div className="border rounded-lg">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-slate-800 text-white">
                   <TableRow>
                     <TableHead className="w-[50px]"></TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Last Modified</TableHead>
+                    <TableHead><HeaderButton field="name" label="Name" /></TableHead>
+                    <TableHead><HeaderButton field="size" label="Size" /></TableHead>
+                    <TableHead><HeaderButton field="lastModified" label="Last Modified" /></TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -544,7 +608,7 @@ export default function StorageManagement() {
                         </TableRow>
                       ))}
                       {/* Files */}
-                      {filteredFiles.map((file) => (
+                      {sortedFiles.map((file) => (
                         <TableRow key={file.id}>
                           <TableCell>
                             <File className="h-4 w-4 text-zinc-500" />
