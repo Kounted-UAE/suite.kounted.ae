@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
 
-
 export async function GET() {
   try {
     // Create CSV template for employers
@@ -17,17 +16,23 @@ export async function GET() {
       'hr@acme.com'
     ]
     
-    // Create CSV content
+    const csvExample2 = [
+      'Tech Solutions FZ-LLC',
+      'payroll@techsolutions.ae'
+    ]
+    
+    // Create CSV content with both examples
     const csvContent = [
       csvHeaders.join(','),
-      csvExample.join(',')
+      csvExample.join(','),
+      csvExample2.join(',')
     ].join('\n')
     
     return new Response(csvContent, {
       status: 200,
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="employers-template.csv"'
+        'Content-Disposition': 'attachment; filename="employers-import-template.csv"'
       }
     })
   } catch (error) {

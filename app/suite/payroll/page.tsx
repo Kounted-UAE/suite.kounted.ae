@@ -110,7 +110,7 @@ export default function SendPayslipsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Payslip Toolkit"
-        description="Generate payslips and manage payroll distribution for all employers. Import payroll data from Excel or CSV files."
+        description="Generate payslips and manage payroll distribution"
         actions={
           <div className="flex items-center gap-2">
             <Button 

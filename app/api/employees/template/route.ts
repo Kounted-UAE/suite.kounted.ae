@@ -38,19 +38,14 @@ export async function GET() {
     const csvContent = [
       csvHeaders.join(','),
       csvExample.join(','),
-      csvExampleNoEmail.join(','),
-      '',
-      '# Notes:',
-      '# - email_id is optional - leave blank if payslips go to HR contact',
-      '# - MOL ID must be unique across all employees',
-      '# - employer_id must be a valid UUID from the employers table'
+      csvExampleNoEmail.join(',')
     ].join('\n')
     
     return new Response(csvContent, {
       status: 200,
       headers: {
         'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="employees-template.csv"'
+        'Content-Disposition': 'attachment; filename="employees-import-template.csv"'
       }
     })
   } catch (error) {

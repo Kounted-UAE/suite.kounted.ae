@@ -30,6 +30,8 @@ interface EmployeeManagementProps {
   onSort?: (field: string) => void
   selected?: Set<string>
   onSelectionChange?: (selected: Set<string>) => void
+  onCountChange?: (sortedCount: number, totalCount: number, selectedCount: number) => void
+  actionButtons?: React.ReactNode
 }
 
 export default function EmployeeManagement({ 
@@ -40,6 +42,8 @@ export default function EmployeeManagement({
   onSort,
   selected = new Set(),
   onSelectionChange,
+  onCountChange,
+  actionButtons,
 }: EmployeeManagementProps) {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
@@ -84,6 +88,8 @@ export default function EmployeeManagement({
           onSort={onSort}
           selected={selected}
           onSelectionChange={onSelectionChange}
+          onCountChange={onCountChange}
+          actionButtons={actionButtons}
         />
       </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@/components/react-ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/react-ui/table'
 import { Checkbox } from '@/components/react-ui/checkbox'
@@ -33,6 +33,8 @@ interface EmployeeListProps {
   onSort?: (field: string) => void
   selected?: Set<string>
   onSelectionChange?: (selected: Set<string>) => void
+  onCountChange?: (sortedCount: number, totalCount: number, selectedCount: number) => void
+  actionButtons?: React.ReactNode
 }
 
 export default function EmployeeList({ 
@@ -43,11 +45,14 @@ export default function EmployeeList({
   onSort,
   selected = new Set(),
   onSelectionChange,
+  onCountChange,
+  actionButtons,
 }: EmployeeListProps) {
   const { toast } = useToast()
   const [employees, setEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const prevCountsRef = useRef<{ sortedCount: number; totalCount: number; selectedCount: number } | null>(null)
 
   const loadEmployees = async () => {
     try {
@@ -178,6 +183,21 @@ export default function EmployeeList({
     })
     return sorted
   }, [filtered, sortBy, sortDir])
+  
+  // Report count changes to parent (only when values actually change)
+  useEffect(() => {
+    if (onCountChange) {
+      const sortedCount = sorted.length
+      const totalCount = employees.length
+      const selectedCount = selected.size
+      
+      const prev = prevCountsRef.current
+      if (!prev || prev.sortedCount !== sortedCount || prev.totalCount !== totalCount || prev.selectedCount !== selectedCount) {
+        prevCountsRef.current = { sortedCount, totalCount, selectedCount }
+        onCountChange(sortedCount, totalCount, selectedCount)
+      }
+    }
+  }, [sorted.length, employees.length, selected.size, onCountChange])
   
   const toggleSelection = (id: string) => {
     if (!onSelectionChange) return
@@ -310,11 +330,8 @@ export default function EmployeeList({
   return (
     <div className="space-y-4">
       <ActionToolbar align="between">
-        <div className="text-xs font-semibold text-green-600">
-          Showing {sorted.length} of {employees.length} employee{employees.length !== 1 ? 's' : ''}
-          {selected.size > 0 && (
-            <span className="ml-2">• {selected.size} selected</span>
-          )}
+        <div className="flex items-center gap-2">
+          {actionButtons}
         </div>
         <Button
           variant="default"

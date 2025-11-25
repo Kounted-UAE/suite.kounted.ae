@@ -15,31 +15,11 @@ type Props = {
   onSuccess?: () => void
 }
 
-// Expected columns for employee import
+// Expected columns for employer import
 const EXPECTED_COLUMNS = [
   'name',
-  'email_id',
-  'employee_mol',
-  'bank_name',
-  'iban',
-  'employer_id'
+  'reviewer_email'
 ]
-
-function isValidUUID(str: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-  return uuidRegex.test(str)
-}
-
-function cleanUUID(value: any): string | null {
-  if (value === undefined || value === null) return null
-  const trimmed = String(value).trim()
-  if (trimmed === '') return null
-  
-  // Remove any extra quotes that might have been added
-  const cleaned = trimmed.replace(/^["']|["']$/g, '')
-  
-  return isValidUUID(cleaned) ? cleaned : null
-}
 
 function normalizeRow(input: Record<string, any>) {
   const row: Record<string, any> = {}
@@ -49,16 +29,13 @@ function normalizeRow(input: Record<string, any>) {
   })
 
   // Trim strings
-  ;['name', 'email_id', 'employee_mol', 'bank_name', 'iban'].forEach(k => {
+  ;['name', 'reviewer_email'].forEach(k => {
     if (row[k] != null) row[k] = String(row[k]).trim()
   })
 
-  // UUIDs - clean and validate
-  row['employer_id'] = cleanUUID(row['employer_id'])
-
-  // Empty strings to null (except name which is required)
+  // Empty strings to null (except required fields)
   Object.keys(row).forEach(k => {
-    if (row[k] === '' && k !== 'name') row[k] = null
+    if (row[k] === '') row[k] = null
   })
 
   return row
@@ -78,47 +55,29 @@ function validateRow(row: Record<string, any>, index: number): ValidationError[]
     errors.push({
       row: index + 2, // +2 because Excel row 1 is headers, and we want 1-based indexing
       field: 'name',
-      message: 'Employee name is required'
+      message: 'Employer name is required'
     })
   }
   
-  // Required: employer_id (must be valid UUID)
-  if (!row.employer_id) {
+  // Required: reviewer_email
+  if (!row.reviewer_email || !String(row.reviewer_email).trim()) {
     errors.push({
       row: index + 2,
-      field: 'employer_id',
-      message: 'Employer ID is required'
+      field: 'reviewer_email',
+      message: 'Reviewer email is required'
     })
-  } else if (!isValidUUID(row.employer_id)) {
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.reviewer_email)) {
     errors.push({
       row: index + 2,
-      field: 'employer_id',
-      message: 'Invalid employer ID format (must be a valid UUID)'
-    })
-  }
-  
-  // Optional but validate if provided: email_id
-  if (row.email_id && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email_id)) {
-    errors.push({
-      row: index + 2,
-      field: 'email_id',
+      field: 'reviewer_email',
       message: 'Invalid email format'
-    })
-  }
-  
-  // Optional but validate if provided: iban
-  if (row.iban && (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/.test(row.iban) || row.iban.length < 15 || row.iban.length > 34)) {
-    errors.push({
-      row: index + 2,
-      field: 'iban',
-      message: 'Invalid IBAN format'
     })
   }
   
   return errors
 }
 
-export default function EmployeeImportDialog({ open, onOpenChange, onSuccess }: Props) {
+export default function EmployerImportDialog({ open, onOpenChange, onSuccess }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [parsedRows, setParsedRows] = useState<any[]>([])
@@ -187,12 +146,12 @@ export default function EmployeeImportDialog({ open, onOpenChange, onSuccess }: 
       setImporting(true)
       setImportProgress({ current: 0, total: cleanRows.length })
 
-      const response = await fetch('/api/employees/bulk-import', {
+      const response = await fetch('/api/employers/bulk-import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ employees: cleanRows }),
+        body: JSON.stringify({ employers: cleanRows }),
       })
 
       const result = await response.json()
@@ -203,7 +162,7 @@ export default function EmployeeImportDialog({ open, onOpenChange, onSuccess }: 
 
       toast({
         title: 'Import Successful',
-        description: `Successfully imported ${result.imported} employee${result.imported !== 1 ? 's' : ''}`,
+        description: `Successfully imported ${result.imported} employer${result.imported !== 1 ? 's' : ''}`,
       })
 
       onSuccess?.()
@@ -222,13 +181,13 @@ export default function EmployeeImportDialog({ open, onOpenChange, onSuccess }: 
 
   const downloadTemplate = async () => {
     try {
-      const response = await fetch('/api/employees/template')
+      const response = await fetch('/api/employers/template')
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = 'employees-template.csv'
+        a.download = 'employers-import-template.csv'
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
@@ -258,7 +217,7 @@ export default function EmployeeImportDialog({ open, onOpenChange, onSuccess }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
-          <DialogTitle className="text-xs">Import Employees</DialogTitle>
+          <DialogTitle className="text-xs">Import Employers</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -291,19 +250,15 @@ export default function EmployeeImportDialog({ open, onOpenChange, onSuccess }: 
             <div className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-md p-3">
               <p className="font-semibold mb-1">Required columns:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><code className="text-xs bg-white px-1 py-0.5 rounded">name</code> - Employee name (required)</li>
-                <li><code className="text-xs bg-white px-1 py-0.5 rounded">employer_id</code> - Employer UUID (required)</li>
+                <li><code className="text-xs bg-white px-1 py-0.5 rounded">name</code> - Employer name (required)</li>
+                <li><code className="text-xs bg-white px-1 py-0.5 rounded">reviewer_email</code> - Reviewer email address (required)</li>
               </ul>
               <p className="mt-2 text-slate-500">Rows missing required fields will be skipped during import.</p>
-              <p className="mt-2 text-slate-500">
-                <span className="font-semibold">Optional columns:</span> <code className="text-xs bg-white px-1 py-0.5 rounded">email_id</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">employee_mol</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">bank_name</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">iban</code>
-              </p>
               <div className="mt-3 pt-3 border-t border-slate-300">
                 <p className="font-semibold mb-1">Notes:</p>
                 <ul className="list-disc list-inside space-y-1 text-slate-500">
-                  <li><code className="text-xs bg-white px-1 py-0.5 rounded">email_id</code> is optional - leave blank if payslips go to HR contact</li>
-                  <li>MOL ID must be unique across all employees</li>
-                  <li><code className="text-xs bg-white px-1 py-0.5 rounded">employer_id</code> must be a valid UUID from the employers table</li>
+                  <li>Employer name must be unique</li>
+                  <li><code className="text-xs bg-white px-1 py-0.5 rounded">reviewer_email</code> is used for payroll notifications and must be a valid email address</li>
                 </ul>
               </div>
             </div>
@@ -335,9 +290,9 @@ export default function EmployeeImportDialog({ open, onOpenChange, onSuccess }: 
               }`}>
                 <div className="flex items-start gap-3">
                   {validationErrors.length === 0 ? (
-                    <CheckCircle className="h-3 w-3 text-green-600 mt-0.5" />
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                   ) : (
-                    <AlertCircle className="h-3 w-3 text-yellow-600 mt-0.5" />
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
                   )}
                   <div className="flex-1">
                     <h4 className={`text-xs font-semibold ${

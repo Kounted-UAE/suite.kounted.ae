@@ -435,7 +435,7 @@ export default function PayslipCSVImportDialog({ open, onOpenChange, onSuccess }
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="relative inline-block">
-              <label htmlFor="csv-upload" className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-white rounded-md bg-red-600 cursor-pointer hover:opacity-90">
+              <label htmlFor="csv-upload" className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-white rounded-md bg-zinc-600 cursor-pointer hover:opacity-90">
                 {file ? file.name : 'Choose CSV file'}
               </label>
               <Input id="csv-upload" type="file" accept=".csv" ref={fileRef} onChange={handleFile} className="hidden" />

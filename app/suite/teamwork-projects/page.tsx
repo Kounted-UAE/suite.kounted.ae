@@ -266,7 +266,7 @@ export default function TeamworkProjectsPage() {
         <CardContent className="space-y-4">
           {/* Categories API Issues Warning */}
           {hasCategoryIssues && (
-            <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div className="bg-zinc-100 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <div className="text-yellow-600 dark:text-yellow-400 mt-0.5">
                   ⚠️

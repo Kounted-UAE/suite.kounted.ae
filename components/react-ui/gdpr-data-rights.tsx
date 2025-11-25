@@ -207,7 +207,7 @@ export function GDPRDataRights() {
               Permanently delete your account and personal data. This action cannot be undone.
             </p>
 
-            <Alert className="border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20">
+            <Alert className="border-yellow-200 bg-zinc-100 dark:bg-yellow-900/20">
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <AlertDescription className="text-xs text-yellow-800 dark:text-yellow-200">
                 Some data may be retained for legal compliance (UAE law requires 7-year retention 

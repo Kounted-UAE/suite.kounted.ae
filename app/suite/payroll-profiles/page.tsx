@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useCallback, useRef, useState, useMemo } from "react"
+import React, { useCallback, useRef, useState, useMemo, useEffect } from "react"
 import { Building, Plus, Users, ChevronDown } from "lucide-react"
-import { EmployerManagement } from "@/components/employers"
+import { EmployerManagement, EmployerImportDialog } from "@/components/employers"
 import { EmployeeManagement, EmployeeImportDialog } from "@/components/employees"
 import { Button } from "@/components/react-ui/button"
 import { Input } from "@/components/react-ui/input"
@@ -23,6 +23,7 @@ export default function PayrollProfilesPage() {
   const [selectedView, setSelectedView] = useState<"employers" | "employees">("employers")
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [employerImportDialogOpen, setEmployerImportDialogOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   
   // Search state with debouncing
@@ -36,6 +37,14 @@ export default function PayrollProfilesPage() {
   
   // Selection state
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  
+  // Count state for displaying record counts
+  const [countData, setCountData] = useState<{
+    sortedCount: number
+    totalCount: number
+    selectedCount: number
+    recordType: string
+  } | null>(null)
   
   // Debounced search
   const debouncedSetSearch = useCallback((value: string) => {
@@ -87,6 +96,25 @@ export default function PayrollProfilesPage() {
     setImportDialogOpen(false)
     setRefreshKey(prev => prev + 1)
   }, [])
+
+  const handleEmployerImportSuccess = useCallback(() => {
+    setEmployerImportDialogOpen(false)
+    setRefreshKey(prev => prev + 1)
+  }, [])
+
+  // Memoized callbacks for count changes
+  const handleEmployerCountChange = useCallback((sortedCount: number, totalCount: number, selectedCount: number) => {
+    setCountData({ sortedCount, totalCount, selectedCount, recordType: 'employer' })
+  }, [])
+
+  const handleEmployeeCountChange = useCallback((sortedCount: number, totalCount: number, selectedCount: number) => {
+    setCountData({ sortedCount, totalCount, selectedCount, recordType: 'employee' })
+  }, [])
+
+  // Reset count data when switching views
+  useEffect(() => {
+    setCountData(null)
+  }, [selectedView])
   
   // Export to CSV handler
   const handleExportCSV = useCallback(() => {
@@ -103,7 +131,7 @@ export default function PayrollProfilesPage() {
             <CardHeader>
               <CardTitle className="text-zinc-900">Usage Instructions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-zinc-800 text-xs">
+            <CardContent className="text-zinc-800 text-xs">
               <div>
                 <h4 className="font-semibold">1. Create Employers First</h4>
                 <p className="text-xs">
@@ -127,31 +155,17 @@ export default function PayrollProfilesPage() {
             </CardContent>
           </Card>
         }
-        actions={
-          <div className="flex items-center gap-2">
-            {selectedView === "employees" && (
-              <Button 
-                size="sm" 
-                variant="ghost"
-                className="text-green-700 font-semibold hover:text-green-800"
-                onClick={() => setImportDialogOpen(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Bulk Import
-              </Button>
-            )}
-            {selectedView === "employees" ? (
-              <Button size="sm" variant="green" onClick={() => employeeActionsRef.current?.openCreate()}>
-                Add Employee
-              </Button>
-            ) : (
-              <Button size="sm" variant="green" onClick={() => employerActionsRef.current?.openCreate()}>
-                Add Employer
-              </Button>
-            )}
-          </div>
-        }
       />
+
+      {/* Count display row above FilterBar */}
+      {countData && (
+        <div className="text-xs font-semibold text-green-600">
+          Showing {countData.sortedCount} of {countData.totalCount} {countData.recordType}{countData.totalCount !== 1 ? 's' : ''}
+          {countData.selectedCount > 0 && (
+            <span className="ml-2">• {countData.selectedCount} selected</span>
+          )}
+        </div>
+      )}
 
       <FilterBar align="between">
         <div className="flex items-center gap-4 text-slate-600">
@@ -259,6 +273,23 @@ export default function PayrollProfilesPage() {
           onSort={handleSort}
           selected={selected}
           onSelectionChange={setSelected}
+          onCountChange={handleEmployerCountChange}
+          actionButtons={
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="ghost"
+                className="text-green-700 font-semibold hover:text-green-800"
+                onClick={() => setEmployerImportDialogOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Bulk Import
+              </Button>
+              <Button size="sm" variant="green" onClick={() => employerActionsRef.current?.openCreate()}>
+                Add Employer
+              </Button>
+            </div>
+          }
         />
       ) : (
         <div key={refreshKey}>
@@ -270,6 +301,23 @@ export default function PayrollProfilesPage() {
             onSort={handleSort}
             selected={selected}
             onSelectionChange={setSelected}
+            onCountChange={handleEmployeeCountChange}
+            actionButtons={
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  className="text-green-700 font-semibold hover:text-green-800"
+                  onClick={() => setImportDialogOpen(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Bulk Import
+                </Button>
+                <Button size="sm" variant="green" onClick={() => employeeActionsRef.current?.openCreate()}>
+                  Add Employee
+                </Button>
+              </div>
+            }
           />
         </div>
       )}
@@ -278,6 +326,12 @@ export default function PayrollProfilesPage() {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onSuccess={handleImportSuccess}
+      />
+
+      <EmployerImportDialog
+        open={employerImportDialogOpen}
+        onOpenChange={setEmployerImportDialogOpen}
+        onSuccess={handleEmployerImportSuccess}
       />
     </div>
   )

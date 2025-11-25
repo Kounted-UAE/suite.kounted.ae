@@ -149,8 +149,8 @@ function TimelineFeatureNode({ feature, position, recentActivity, onClick }: Tim
     planned: { color: 'bg-gray-100 border-gray-300', icon: Circle, iconColor: 'text-gray-400' },
     'in-progress': { color: 'bg-zinc-100 border-zinc-300', icon: Circle, iconColor: 'text-zinc-500' },
     completed: { color: 'bg-zinc-100 border-green-300', icon: CheckCircle, iconColor: 'text-zinc-500' },
-    deferred: { color: 'bg-yellow-100 border-yellow-300', icon: Pause, iconColor: 'text-yellow-500' },
-    blocked: { color: 'bg-red-100 border-red-300', icon: AlertTriangle, iconColor: 'text-red-500' }
+    deferred: { color: 'bg-zinc-100 border-yellow-300', icon: Pause, iconColor: 'text-yellow-500' },
+    blocked: { color: 'bg-zinc-100 border-red-300', icon: AlertTriangle, iconColor: 'text-red-500' }
   };
 
   const config = statusConfig[feature.status];

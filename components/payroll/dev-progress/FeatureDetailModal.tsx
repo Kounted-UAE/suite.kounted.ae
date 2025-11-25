@@ -77,8 +77,8 @@ export default function FeatureDetailModal({
     planned: { color: 'text-gray-500', bgColor: 'bg-gray-100' },
     'in-progress': { color: 'text-zinc-500', bgColor: 'bg-zinc-100' },
     completed: { color: 'text-zinc-500', bgColor: 'bg-zinc-100' },
-    deferred: { color: 'text-yellow-500', bgColor: 'bg-yellow-100' },
-    blocked: { color: 'text-red-500', bgColor: 'bg-red-100' }
+    deferred: { color: 'text-yellow-500', bgColor: 'bg-zinc-100' },
+    blocked: { color: 'text-red-500', bgColor: 'bg-zinc-100' }
   };
 
   const config = statusConfig[feature.status];

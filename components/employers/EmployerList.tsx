@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@/components/react-ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/react-ui/table'
 import { Checkbox } from '@/components/react-ui/checkbox'
@@ -24,6 +24,8 @@ interface EmployerListProps {
   onSort?: (field: string) => void
   selected?: Set<string>
   onSelectionChange?: (selected: Set<string>) => void
+  onCountChange?: (sortedCount: number, totalCount: number, selectedCount: number) => void
+  actionButtons?: React.ReactNode
 }
 
 export default function EmployerList({ 
@@ -34,11 +36,14 @@ export default function EmployerList({
   onSort,
   selected = new Set(),
   onSelectionChange,
+  onCountChange,
+  actionButtons,
 }: EmployerListProps) {
   const { toast } = useToast()
   const [employers, setEmployers] = useState<Employer[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const prevCountsRef = useRef<{ sortedCount: number; totalCount: number; selectedCount: number } | null>(null)
 
   const loadEmployers = async () => {
     try {
@@ -161,6 +166,21 @@ export default function EmployerList({
     return sorted
   }, [filtered, sortBy, sortDir])
   
+  // Report count changes to parent (only when values actually change)
+  useEffect(() => {
+    if (onCountChange) {
+      const sortedCount = sorted.length
+      const totalCount = employers.length
+      const selectedCount = selected.size
+      
+      const prev = prevCountsRef.current
+      if (!prev || prev.sortedCount !== sortedCount || prev.totalCount !== totalCount || prev.selectedCount !== selectedCount) {
+        prevCountsRef.current = { sortedCount, totalCount, selectedCount }
+        onCountChange(sortedCount, totalCount, selectedCount)
+      }
+    }
+  }, [sorted.length, employers.length, selected.size, onCountChange])
+  
   const toggleSelection = (id: string) => {
     if (!onSelectionChange) return
     const next = new Set(selected)
@@ -280,11 +300,8 @@ export default function EmployerList({
   return (
     <div className="space-y-4">
       <ActionToolbar align="between">
-        <div className="text-xs font-semibold text-green-600">
-          Showing {sorted.length} of {employers.length} employer{employers.length !== 1 ? 's' : ''}
-          {selected.size > 0 && (
-            <span className="ml-2">• {selected.size} selected</span>
-          )}
+        <div className="flex items-center gap-2">
+          {actionButtons}
         </div>
         <Button
           variant="default"
