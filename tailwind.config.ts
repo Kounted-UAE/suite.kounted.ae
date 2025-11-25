@@ -9,6 +9,39 @@ export default {
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
 	],
+	safelist: [
+		// Kounted Green utilities
+		'bg-kounted-green',
+		'text-kounted-green',
+		'border-kounted-green',
+		'hover:bg-kounted-green',
+		'hover:text-kounted-green',
+		'focus:border-kounted-green',
+		'ring-kounted-green',
+		// Kounted Charcoal utilities
+		'bg-kounted-charcoal',
+		'text-kounted-charcoal',
+		'border-kounted-charcoal',
+		'hover:bg-kounted-charcoal',
+		// Kounted Dark utilities
+		'bg-kounted-dark',
+		'text-kounted-dark',
+		'border-kounted-dark',
+		// Kounted Light utilities
+		'bg-kounted-light',
+		'text-kounted-light',
+		'border-kounted-light',
+		// Opacity variants (Tailwind will generate these automatically)
+		{
+			pattern: /bg-kounted-(green|charcoal|dark|light)\/\d+/,
+		},
+		{
+			pattern: /text-kounted-(green|charcoal|dark|light)\/\d+/,
+		},
+		{
+			pattern: /border-kounted-(green|charcoal|dark|light)\/\d+/,
+		},
+	],
 	prefix: "",
 	theme: {
 		container: {
