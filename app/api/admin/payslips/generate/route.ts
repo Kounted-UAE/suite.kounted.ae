@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseServiceClient } from '@/lib/supabase/server'
+import { getSupabaseWithUser, getSupabaseAdminClient } from '@/lib/supabase/server'
+import { canManagePayroll } from '@/lib/utils/roles'
 import crypto from 'crypto'
 import { generatePayslipPDFStyled } from '@/lib/utils/pdf/generatePayslipPDFStyled'
 import { generatePayslipPDFFallback } from '@/lib/utils/pdf/generatePayslipPDFFallback'
@@ -216,7 +217,40 @@ async function processRowWithFallback(row: any, supabase: any): Promise<{ batch_
 export async function POST(req: NextRequest) {
   try {
     console.log('Starting payslip generation API...')
-    const supabase = getSupabaseServiceClient()
+    
+    // Get user context and verify permissions
+    const { supabase: userSupabase, user, profile, error: authError } = await getSupabaseWithUser()
+    
+    if (authError || !user || !profile) {
+      console.error('Authentication failed:', authError)
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user has permission to manage payroll
+    if (!canManagePayroll(profile)) {
+      console.error('Permission denied for user:', profile.role_slug)
+      return NextResponse.json(
+        { error: 'You do not have permission to generate payslips' },
+        { status: 403 }
+      )
+    }
+
+    console.log('User authorized:', profile.email, profile.role_slug)
+
+    // Use admin client for payslip generation operations
+    // This is acceptable because we've verified the user has proper permissions
+    let supabase
+    try {
+      supabase = getSupabaseAdminClient()
+      console.log('Using admin client for payslip generation')
+    } catch (adminError) {
+      // Fallback to user client if admin client is not available
+      console.warn('Admin client not available, using user client:', adminError)
+      supabase = userSupabase
+    }
     
     // Support both direct batchIds array or chunked approach with filters
     const body = await req.json().catch(() => ({}))
