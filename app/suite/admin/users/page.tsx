@@ -30,8 +30,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/react-ui/table'
-import { Alert, AlertDescription } from '@/components/react-ui/alert'
-import { AlertCircle, UserPlus, Search, Loader2 } from 'lucide-react'
+import { AlertCircle, UserPlus, Search, Loader2, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,7 +54,7 @@ export default function UsersManagementPage() {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   
   // Invite dialog state
@@ -64,6 +64,9 @@ export default function UsersManagementPage() {
   const [inviteFullName, setInviteFullName] = useState('')
   const [inviting, setInviting] = useState(false)
 
+  // Track which user's role is being updated
+  const [updatingRoleForUser, setUpdatingRoleForUser] = useState<string | null>(null)
+
   // Check permissions
   useEffect(() => {
     if (!authLoading && (!profile || !canManageUsers(profile))) {
@@ -71,27 +74,32 @@ export default function UsersManagementPage() {
     }
   }, [profile, authLoading, router])
 
-  // Fetch users
+  // Fetch users function (can be called to refresh)
+  const fetchUsers = async (showToast = false) => {
+    if (showToast) setRefreshing(true)
+    try {
+      const response = await fetch('/api/admin/users/list')
+      if (!response.ok) {
+        throw new Error('Failed to fetch users')
+      }
+      const data = await response.json()
+      setUsers(data.users || [])
+      setFilteredUsers(data.users || [])
+      if (showToast) {
+        toast.success('User list refreshed')
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to load users')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  // Fetch users on mount
   useEffect(() => {
     if (authLoading || !profile || !canManageUsers(profile)) return
-
-    async function fetchUsers() {
-      try {
-        const response = await fetch('/api/admin/users/list')
-        if (!response.ok) {
-          throw new Error('Failed to fetch users')
-        }
-        const data = await response.json()
-        setUsers(data.users || [])
-        setFilteredUsers(data.users || [])
-      } catch (err) {
-        console.error('Error fetching users:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load users')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchUsers()
   }, [authLoading, profile])
 
@@ -113,7 +121,7 @@ export default function UsersManagementPage() {
     if (!inviteEmail || !inviteRole) return
 
     setInviting(true)
-    setError(null)
+    const toastId = toast.loading('Sending invitation...')
 
     try {
       const response = await fetch('/api/admin/users/invite', {
@@ -126,16 +134,17 @@ export default function UsersManagementPage() {
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const data = await response.json()
         throw new Error(data.error || 'Failed to invite user')
       }
 
+      // Show success toast
+      toast.success('User invited successfully! They will receive an email.', { id: toastId })
+
       // Refresh users list
-      const listResponse = await fetch('/api/admin/users/list')
-      const listData = await listResponse.json()
-      setUsers(listData.users || [])
-      setFilteredUsers(listData.users || [])
+      await fetchUsers()
 
       // Close dialog and reset form
       setInviteDialogOpen(false)
@@ -144,13 +153,17 @@ export default function UsersManagementPage() {
       setInviteFullName('')
     } catch (err) {
       console.error('Error inviting user:', err)
-      setError(err instanceof Error ? err.message : 'Failed to invite user')
+      const errorMsg = err instanceof Error ? err.message : 'Failed to invite user'
+      toast.error(errorMsg, { id: toastId })
     } finally {
       setInviting(false)
     }
   }
 
   const handleRoleChange = async (userId: string, newRole: string) => {
+    setUpdatingRoleForUser(userId)
+    const toastId = toast.loading('Updating role...')
+
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
@@ -159,10 +172,11 @@ export default function UsersManagementPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to update role')
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update role')
       }
 
-      // Update local state
+      // Update local state optimistically
       setUsers(users.map(user =>
         user.id === userId
           ? {
@@ -171,9 +185,55 @@ export default function UsersManagementPage() {
             }
           : user
       ))
+      
+      toast.success('Role updated successfully', { id: toastId })
     } catch (err) {
       console.error('Error updating role:', err)
-      setError(err instanceof Error ? err.message : 'Failed to update role')
+      toast.error(err instanceof Error ? err.message : 'Failed to update role', { id: toastId })
+      // Refresh to get correct state
+      await fetchUsers()
+    } finally {
+      setUpdatingRoleForUser(null)
+    }
+  }
+
+  const handleToggleStatus = async (userId: string, currentStatus: boolean, userEmail: string) => {
+    // Prevent self-deactivation
+    if (userId === profile?.id && currentStatus) {
+      toast.error('You cannot deactivate your own account')
+      return
+    }
+
+    const action = currentStatus ? 'deactivate' : 'activate'
+    const toastId = toast.loading(`${action === 'activate' ? 'Activating' : 'Deactivating'} user...`)
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !currentStatus }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || `Failed to ${action} user`)
+      }
+
+      // Update local state
+      setUsers(users.map(user =>
+        user.id === userId
+          ? {
+              ...user,
+              profile: user.profile ? { ...user.profile, is_active: !currentStatus } : null,
+            }
+          : user
+      ))
+      
+      toast.success(`User ${action}d successfully`, { id: toastId })
+    } catch (err) {
+      console.error(`Error ${action}ing user:`, err)
+      toast.error(err instanceof Error ? err.message : `Failed to ${action} user`, { id: toastId })
+      await fetchUsers()
     }
   }
 
@@ -192,16 +252,21 @@ export default function UsersManagementPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">User Management</h1>
-        <p className="text-neutral-600">Manage user accounts and permissions</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">User Management</h1>
+            <p className="text-neutral-600">Manage user accounts and permissions</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => fetchUsers(true)}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
-
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
       <div className="flex justify-between items-center mb-6">
         <div className="relative w-full max-w-sm">
@@ -236,7 +301,7 @@ export default function UsersManagementPage() {
             {filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-neutral-500">
-                  No users found
+                  {searchTerm ? 'No users match your search' : 'No users found'}
                 </TableCell>
               </TableRow>
             ) : (
@@ -248,9 +313,17 @@ export default function UsersManagementPage() {
                     <Select
                       value={user.profile?.role_slug || ''}
                       onValueChange={(value) => handleRoleChange(user.id, value)}
+                      disabled={updatingRoleForUser === user.id}
                     >
                       <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select role" />
+                        {updatingRoleForUser === user.id ? (
+                          <div className="flex items-center">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Updating...
+                          </div>
+                        ) : (
+                          <SelectValue placeholder="Select role" />
+                        )}
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="kounted-superadmin">Super Admin</SelectItem>
@@ -262,15 +335,17 @@ export default function UsersManagementPage() {
                     </Select>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
+                    <button
+                      onClick={() => handleToggleStatus(user.id, user.profile?.is_active ?? false, user.email)}
+                      className={`px-2 py-1 rounded-full text-xs cursor-pointer hover:opacity-80 transition-opacity ${
                         user.profile?.is_active
                           ? 'bg-green-100 text-green-700'
                           : 'bg-red-100 text-red-700'
                       }`}
+                      title={`Click to ${user.profile?.is_active ? 'deactivate' : 'activate'}`}
                     >
                       {user.profile?.is_active ? 'Active' : 'Inactive'}
-                    </span>
+                    </button>
                   </TableCell>
                   <TableCell>
                     {user.last_sign_in_at
