@@ -23,8 +23,8 @@ export const sidebarSections: SidebarSection[] = [
   {
     label: "Payroll Deck",
     items: [
-      { title: "Payroll Processing", url: "/suite/payroll", icon: FileSpreadsheet, status: "active" },
-      { title: "Payroll Objects", url: "/suite/entity-management", icon: Users, status: "active" },
+      { title: "Payroll Payslips", url: "/suite/payroll", icon: FileSpreadsheet, status: "active" },
+      { title: "Payroll Profiles", url: "/suite/payroll-profiles", icon: Users, status: "active" },
      
     ],
     collapsible: false,

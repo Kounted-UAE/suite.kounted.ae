@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/react-ui/popover"
 
-export default function EntityManagementPage() {
+export default function PayrollProfilesPage() {
   const employerActionsRef = useRef<{ openCreate: () => void } | null>(null)
   const employeeActionsRef = useRef<{ openCreate: () => void } | null>(null)
   const [selectedView, setSelectedView] = useState<"employers" | "employees">("employers")
@@ -97,7 +97,7 @@ export default function EntityManagementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Entity Management"
+        title="Payroll Profiles"
         description="Manage employers and employees for payroll processing. Create and maintain core entity records that generate UUIDs for use in payroll transactions."
         breadcrumbs="Payroll Deck"
         actions={
@@ -284,3 +284,4 @@ export default function EntityManagementPage() {
     </div>
   )
 }
+
