@@ -15,9 +15,23 @@ interface Employer {
 
 interface EmployerManagementProps {
   registerActions?: (actions: { openCreate: () => void }) => void
+  search?: string
+  sortBy?: string
+  sortDir?: 'asc' | 'desc'
+  onSort?: (field: string) => void
+  selected?: Set<string>
+  onSelectionChange?: (selected: Set<string>) => void
 }
 
-export default function EmployerManagement({ registerActions }: EmployerManagementProps) {
+export default function EmployerManagement({ 
+  registerActions,
+  search = '',
+  sortBy = 'created_at',
+  sortDir = 'desc',
+  onSort,
+  selected = new Set(),
+  onSelectionChange,
+}: EmployerManagementProps) {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingEmployer, setEditingEmployer] = useState<Employer | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -53,7 +67,15 @@ export default function EmployerManagement({ registerActions }: EmployerManageme
   return (
     <div className="space-y-6">
       <div key={refreshKey}>
-        <EmployerList onEdit={handleEdit} />
+        <EmployerList 
+          onEdit={handleEdit}
+          search={search}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={onSort}
+          selected={selected}
+          onSelectionChange={onSelectionChange}
+        />
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>

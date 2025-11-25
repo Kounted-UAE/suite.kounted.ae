@@ -21,25 +21,27 @@ export interface SidebarSection {
   
 export const sidebarSections: SidebarSection[] = [
   {
-    label: "Payroll Tools",
+    label: "Payroll Deck",
     items: [
       { title: "Payroll Processing", url: "/suite/payroll", icon: FileSpreadsheet, status: "active" },
       { title: "Payroll Objects", url: "/suite/entity-management", icon: Users, status: "active" },
-      { title: "Payroll Pay Periods", url: "/suite/admin/pay-period-management", icon: Archive, status: "active" },       
+     
     ],
     collapsible: false,
   },
   {
-    label: "Project Management",
+    label: "Client Deck",
     items: [
       { title: "Teamwork Projects", url: "/suite/teamwork-projects", icon: FolderKanban, status: "active" },
     ],
     collapsible: false,
   },
   {
-    label: "Admin",
+    label: "Admin Deck",
     items: [
-      { title: "Manage Storage", url: "/suite/admin/storage", icon: HardDrive, status: "active" },
+      { title: "User Manager", url: "/suite/admin/users", icon: Users, status: "active" },
+      { title: "File Manager", url: "/suite/admin/storage", icon: Archive, status: "active" },
+      { title: "Payroll Manager", url: "/suite/admin/pay-period-management", icon: FolderKanban, status: "active" },       
     ],
     collapsible: false,
   },

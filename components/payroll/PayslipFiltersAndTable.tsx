@@ -618,6 +618,7 @@ export function PayslipFiltersAndTable({
             <Button 
               variant="ghost" 
               size="sm" 
+              className="text-green-600"
               onClick={() => {
                 onSearchChange?.('')
                 onEmployersChange?.(new Set())
@@ -629,15 +630,26 @@ export function PayslipFiltersAndTable({
             </Button>
           )}
 
-          {onClearSort && (
-            <Button variant="ghost" size="sm" onClick={onClearSort}>Clear Sort</Button>
+          {onClearSort && (sortBy !== 'created_at' || sortDir !== 'desc') && (
+            <Button variant="ghost" size="sm" className="text-green-600" onClick={onClearSort}>Clear Sort</Button>
+          )}
+
+          {selected.size > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-green-600"
+              onClick={() => onSelectionChange(new Set())}
+            >
+              Clear All Selections
+            </Button>
           )}
         </div>
 
         {/* Active Filter Badges */}
         <div className="flex items-center gap-2 flex-wrap">
           {Array.from(selectedEmployers).map((employer) => (
-            <Badge key={employer} variant="secondary" className="gap-1">
+            <Badge key={employer} variant="secondary" className="gap-1 text-green-600">
               {employer}
               <X 
                 className="h-3 w-3 cursor-pointer" 
@@ -651,7 +663,7 @@ export function PayslipFiltersAndTable({
             </Badge>
           ))}
           {Array.from(selectedDates).map((date) => (
-            <Badge key={date} variant="secondary" className="gap-1">
+            <Badge key={date} variant="secondary" className="gap-1 text-green-600">
               {date}
               <X 
                 className="h-3 w-3 cursor-pointer" 
@@ -668,22 +680,13 @@ export function PayslipFiltersAndTable({
 
         <div className="flex items-center justify-between">
           <div className="text-sm text-slate-600 font-bold">
-            Showing {rows.length} result{rows.length !== 1 && 's'} of {total} total
+            Showing {rows.length} result{rows.length !== 1 && 's'} of {total} records
             {selectedInFiltered > 0 && (
               <span className="ml-2">
                 • {selectedInFiltered} selected
               </span>
             )}
           </div>
-          {selected.size > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => onSelectionChange(new Set())}
-            >
-              Clear All Selections
-            </Button>
-          )}
         </div>
       </div>
 

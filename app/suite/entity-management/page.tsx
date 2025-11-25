@@ -1,12 +1,16 @@
 'use client'
 
-import React, { useCallback, useRef, useState } from "react"
+import React, { useCallback, useRef, useState, useMemo } from "react"
 import { Building, Plus, Users, ChevronDown } from "lucide-react"
 import { EmployerManagement } from "@/components/employers"
 import { EmployeeManagement, EmployeeImportDialog } from "@/components/employees"
 import { Button } from "@/components/react-ui/button"
+import { Input } from "@/components/react-ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/react-ui/card"
 import { PageHeader } from "@/components/react-layout/PageHeader"
+import { FilterBar } from "@/components/react-layout/FilterBar"
+import { ActionToolbar } from "@/components/react-layout/ActionToolbar"
+import { toast } from "@/hooks/use-toast"
 import {
   Popover,
   PopoverContent,
@@ -20,6 +24,56 @@ export default function EntityManagementPage() {
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [importDialogOpen, setImportDialogOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  
+  // Search state with debouncing
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const searchTimeout = useRef<NodeJS.Timeout>()
+  
+  // Sort state
+  const [sortBy, setSortBy] = useState<string>('created_at')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  
+  // Selection state
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  
+  // Debounced search
+  const debouncedSetSearch = useCallback((value: string) => {
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current)
+    }
+    searchTimeout.current = setTimeout(() => {
+      setSearch(value)
+    }, 500)
+  }, [])
+  
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value)
+    debouncedSetSearch(value)
+  }
+  
+  const handleSort = useCallback((field: string) => {
+    if (sortBy === field) {
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(field)
+      setSortDir('asc')
+    }
+  }, [sortBy])
+  
+  const handleClearSort = useCallback(() => {
+    setSortBy('created_at')
+    setSortDir('desc')
+  }, [])
+  
+  const handleClearFilters = useCallback(() => {
+    setSearchInput('')
+    setSearch('')
+  }, [])
+  
+  const handleClearSelections = useCallback(() => {
+    setSelected(new Set())
+  }, [])
 
   const registerEmployerActions = useCallback((actions: { openCreate: () => void }) => {
     employerActionsRef.current = actions
@@ -33,6 +87,12 @@ export default function EntityManagementPage() {
     setImportDialogOpen(false)
     setRefreshKey(prev => prev + 1)
   }, [])
+  
+  // Export to CSV handler
+  const handleExportCSV = useCallback(() => {
+    // This will be handled by the list components, but we need to pass the handler
+    // The actual export logic will be in EmployeeList/EmployerList
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -40,105 +100,152 @@ export default function EntityManagementPage() {
         title="Entity Management"
         description="Manage employers and employees for payroll processing. Create and maintain core entity records that generate UUIDs for use in payroll transactions."
         breadcrumbs="Payroll Deck"
+        actions={
+          <div className="flex items-center gap-2">
+            {selectedView === "employees" && (
+              <Button 
+                size="sm" 
+                variant="ghost"
+                className="text-green-700 font-semibold hover:text-green-800"
+                onClick={() => setImportDialogOpen(true)}
+              >
+                Import
+              </Button>
+            )}
+            {selectedView === "employees" ? (
+              <Button size="sm" variant="green" onClick={() => employeeActionsRef.current?.openCreate()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Employee
+              </Button>
+            ) : (
+              <Button size="sm" variant="green" onClick={() => employerActionsRef.current?.openCreate()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Employer
+              </Button>
+            )}
+          </div>
+        }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="justify-between min-w-[200px] bg-zinc-100">
-              {selectedView === "employers" ? "Employers" : "Employees"}
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-0 bg-slate-800 text-white">
-            <div className="p-1">
-              <button
-                onClick={() => {
-                  setSelectedView("employers")
-                  setPopoverOpen(false)
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
-                  selectedView === "employers"
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                }`}
-              >
-                <Building className="h-4 w-4" />
-                Employers
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedView("employees")
-                  setPopoverOpen(false)
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
-                  selectedView === "employees"
-                    ? "bg-slate-700 text-white"
-                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                }`}
-              >
-                <Users className="h-4 w-4" />
-                Employees
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {selectedView === "employees" ? (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setImportDialogOpen(true)}
-              className="text-green-700 font-semibold text-sm hover:text-green-800 transition-colors"
+      <FilterBar align="between">
+        <div className="flex items-center gap-4 text-slate-600">
+          <Input
+            type="text"
+            placeholder={selectedView === "employees" ? "Search employee, email, employer, MOL ID..." : "Search employer, reviewer email..."}
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="max-w-sm"
+          />
+          
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="justify-between min-w-[200px] bg-zinc-100">
+                {selectedView === "employers" ? "Employers" : "Employees"}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0 bg-slate-800 text-white">
+              <div className="p-1">
+                <button
+                  onClick={() => {
+                    setSelectedView("employers")
+                    setPopoverOpen(false)
+                    setSelected(new Set())
+                    setSearchInput('')
+                    setSearch('')
+                  }}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                    selectedView === "employers"
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <Building className="h-4 w-4" />
+                  Employers
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedView("employees")
+                    setPopoverOpen(false)
+                    setSelected(new Set())
+                    setSearchInput('')
+                    setSearch('')
+                  }}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                    selectedView === "employees"
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <Users className="h-4 w-4" />
+                  Employees
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Clear Filters */}
+          {search && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-green-600"
+              onClick={handleClearFilters}
             >
-              Import
-            </button>
-            <Button size="sm" variant="green" onClick={() => employeeActionsRef.current?.openCreate()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Employee
+              Clear All Filters
             </Button>
-          </div>
-        ) : (
-          <Button size="sm" variant="green" onClick={() => employerActionsRef.current?.openCreate()}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Employer
-          </Button>
-        )}
-      </div>
+          )}
 
+          {/* Clear Sort */}
+          {(sortBy !== 'created_at' || sortDir !== 'desc') && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-green-600"
+              onClick={handleClearSort}
+            >
+              Clear Sort
+            </Button>
+          )}
+
+          {/* Clear Selections */}
+          {selected.size > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-green-600"
+              onClick={handleClearSelections}
+            >
+              Clear All Selections
+            </Button>
+          )}
+        </div>
+      </FilterBar>
+      
       {selectedView === "employers" ? (
-        <Card>
-          <CardHeader className="flex flex-col gap-2">
-            <CardTitle className="flex items-center gap-2 text-base text-slate-600">
-              <Building className="h-4 w-4" />
-              Employer Records
-            </CardTitle>
-            <p className="text-sm text-slate-500">
-              Manage company records. Each employer has a unique UUID that can be used in payroll
-              imports to maintain data consistency.
-            </p>
-          </CardHeader>
-          <CardContent className="p-0">
-            <EmployerManagement registerActions={registerEmployerActions} />
-          </CardContent>
-        </Card>
+        <EmployerManagement 
+          registerActions={registerEmployerActions}
+          search={search}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={handleSort}
+          selected={selected}
+          onSelectionChange={setSelected}
+        />
       ) : (
-        <Card>
-          <CardHeader className="flex flex-col gap-2">
-            <CardTitle className="flex items-center gap-2 text-base text-slate-600">
-              <Users className="h-4 w-4" />
-              Employee Records
-            </CardTitle>
-            <p className="text-sm text-slate-500">
-              Manage employee records linked to employers. Each employee has a unique UUID that can
-              be used in payroll imports to ensure proper identification.
-            </p>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div key={refreshKey}>
-              <EmployeeManagement registerActions={registerEmployeeActions} />
-            </div>
-          </CardContent>
-        </Card>
+        <div key={refreshKey}>
+          <EmployeeManagement 
+            registerActions={registerEmployeeActions}
+            search={search}
+            sortBy={sortBy}
+            sortDir={sortDir}
+            onSort={handleSort}
+            selected={selected}
+            onSelectionChange={setSelected}
+          />
+        </div>
       )}
 
       <Card className="border-blue-200 bg-blue-50">
