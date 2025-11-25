@@ -1,0 +1,4 @@
+name,email_id,employee_mol,bank_name,iban,employer_id
+John Smith,john.smith@acme.com,MOL123456,Emirates NBD,AE070331234567890123456,employer-uuid-here
+Jane Doe,,MOL789012,ADCB Bank,AE123456789012345678901,employer-uuid-here
+

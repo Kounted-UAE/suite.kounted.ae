@@ -3,7 +3,7 @@
 import React, { useCallback, useRef, useState } from "react"
 import { Building, Plus, Users, ChevronDown } from "lucide-react"
 import { EmployerManagement } from "@/components/employers"
-import { EmployeeManagement } from "@/components/employees"
+import { EmployeeManagement, EmployeeImportDialog } from "@/components/employees"
 import { Button } from "@/components/react-ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/react-ui/card"
 import { PageHeader } from "@/components/react-layout/PageHeader"
@@ -18,6 +18,8 @@ export default function EntityManagementPage() {
   const employeeActionsRef = useRef<{ openCreate: () => void } | null>(null)
   const [selectedView, setSelectedView] = useState<"employers" | "employees">("employers")
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const registerEmployerActions = useCallback((actions: { openCreate: () => void }) => {
     employerActionsRef.current = actions
@@ -25,6 +27,11 @@ export default function EntityManagementPage() {
 
   const registerEmployeeActions = useCallback((actions: { openCreate: () => void }) => {
     employeeActionsRef.current = actions
+  }, [])
+
+  const handleImportSuccess = useCallback(() => {
+    setImportDialogOpen(false)
+    setRefreshKey(prev => prev + 1)
   }, [])
 
   return (
@@ -78,10 +85,18 @@ export default function EntityManagementPage() {
         </Popover>
 
         {selectedView === "employees" ? (
-          <Button size="sm" variant="green" onClick={() => employeeActionsRef.current?.openCreate()}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Employee
-          </Button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setImportDialogOpen(true)}
+              className="text-green-700 font-semibold text-sm hover:text-green-800 transition-colors"
+            >
+              Import
+            </button>
+            <Button size="sm" variant="green" onClick={() => employeeActionsRef.current?.openCreate()}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Employee
+            </Button>
+          </div>
         ) : (
           <Button size="sm" variant="green" onClick={() => employerActionsRef.current?.openCreate()}>
             <Plus className="mr-2 h-4 w-4" />
@@ -119,7 +134,9 @@ export default function EntityManagementPage() {
             </p>
           </CardHeader>
           <CardContent className="p-0">
-            <EmployeeManagement registerActions={registerEmployeeActions} />
+            <div key={refreshKey}>
+              <EmployeeManagement registerActions={registerEmployeeActions} />
+            </div>
           </CardContent>
         </Card>
       )}
@@ -151,6 +168,12 @@ export default function EntityManagementPage() {
           </div>
         </CardContent>
       </Card>
+
+      <EmployeeImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onSuccess={handleImportSuccess}
+      />
     </div>
   )
 }
