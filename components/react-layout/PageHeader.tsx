@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils"
 export interface PageHeaderProps {
   title: React.ReactNode
   description?: React.ReactNode
-  breadcrumbs?: React.ReactNode
   actions?: React.ReactNode
   children?: React.ReactNode
   className?: string
@@ -15,7 +14,6 @@ export interface PageHeaderProps {
 export function PageHeader({
   title,
   description,
-  breadcrumbs,
   actions,
   children,
   className,
@@ -23,19 +21,18 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "suite-page-header relative flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-sm",
+        "suite-page-header relative flex flex-col gap-4 rounded-2xl backdrop-blur-sm",
         className
       )}
     >
-      {breadcrumbs ? (
+      {title ? (
         <div className="text-xs font-medium uppercase tracking-widest text-slate-400">
-          {breadcrumbs}
+          {title}
         </div>
       ) : null}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-xs text-green-600 font-semibold">{title}</h1>
           {description ? (
             <p className="max-w-2xl text-xs text-black font-medium">{description}</p>
           ) : null}

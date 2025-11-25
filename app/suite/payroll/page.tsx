@@ -109,9 +109,8 @@ export default function SendPayslipsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Send Payslips"
-        description="Generate payslips, send emails to employees, and manage payroll distribution for all employers."
-        breadcrumbs="Payroll Deck"
+        title="Payslip Toolkit"
+        description="Generate payslips and manage payroll distribution for all employers. Import payroll data from Excel or CSV files."
         actions={
           <div className="flex items-center gap-2">
             <Button 
@@ -165,7 +164,7 @@ export default function SendPayslipsPage() {
             setSelectedDates(dates)
             setPage(1)
           }}
-          onFiltersChange={() => setPage(1)} // Reset to page 1 when filters change
+          onFiltersChange={() => setPage(1)} 
           showDeleted={showDeleted}
         />
       ) : step === 'generate' ? (

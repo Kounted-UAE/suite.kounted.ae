@@ -23,7 +23,7 @@ export const sidebarSections: SidebarSection[] = [
   {
     label: "Payroll Deck",
     items: [
-      { title: "Payroll Payslips", url: "/suite/payroll", icon: FileSpreadsheet, status: "active" },
+      { title: "Payslip Toolkit", url: "/suite/payroll", icon: FileSpreadsheet, status: "active" },
       { title: "Payroll Profiles", url: "/suite/payroll-profiles", icon: Users, status: "active" },
      
     ],

@@ -133,7 +133,7 @@ export default function PayrollIngestPage() {
       </FilterBar>
 
       <ActionToolbar subdued align="between">
-        <div className="text-sm font-semibold text-slate-600">
+        <div className="text-xs font-semibold text-green-600">
           Showing {rows.length} of {total}
         </div>
         <div className="text-xs uppercase tracking-wide text-slate-500">

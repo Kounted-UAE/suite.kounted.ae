@@ -98,8 +98,35 @@ export default function PayrollProfilesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Payroll Profiles"
-        description="Manage employers and employees for payroll processing. Create and maintain core entity records that generate UUIDs for use in payroll transactions."
-        breadcrumbs="Payroll Deck"
+        description={
+          <Card className="bg-zinc-100">
+            <CardHeader>
+              <CardTitle className="text-zinc-900">Usage Instructions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-zinc-800 text-xs">
+              <div>
+                <h4 className="font-semibold">1. Create Employers First</h4>
+                <p className="text-xs">
+                  Add company records with reviewer email addresses for payroll notifications.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold">2. Add Employees</h4>
+                <p className="text-xs">
+                  Create employee records and associate them with employers. Include banking details and
+                  MOL IDs as needed.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold">3. Use Generated UUIDs</h4>
+                <p className="text-xs">
+                  Copy the generated UUIDs from these records to use in your payroll import files for
+                  consistent data linking.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        }
         actions={
           <div className="flex items-center gap-2">
             {selectedView === "employees" && (
@@ -109,17 +136,16 @@ export default function PayrollProfilesPage() {
                 className="text-green-700 font-semibold hover:text-green-800"
                 onClick={() => setImportDialogOpen(true)}
               >
-                Import
+                <Plus className="mr-2 h-4 w-4" />
+                Bulk Import
               </Button>
             )}
             {selectedView === "employees" ? (
               <Button size="sm" variant="green" onClick={() => employeeActionsRef.current?.openCreate()}>
-                <Plus className="mr-2 h-4 w-4" />
                 Add Employee
               </Button>
             ) : (
               <Button size="sm" variant="green" onClick={() => employerActionsRef.current?.openCreate()}>
-                <Plus className="mr-2 h-4 w-4" />
                 Add Employer
               </Button>
             )}
@@ -144,7 +170,7 @@ export default function PayrollProfilesPage() {
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0 bg-slate-800 text-white">
+            <PopoverContent className="w-[200px] p-0 bg-slate-200 text-slate-600">
               <div className="p-1">
                 <button
                   onClick={() => {
@@ -154,10 +180,10 @@ export default function PayrollProfilesPage() {
                     setSearchInput('')
                     setSearch('')
                   }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded-md transition-colors ${
                     selectedView === "employers"
                       ? "bg-slate-700 text-white"
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                      : "text-slate-600 hover:bg-slate-200 hover:text-slate-400"
                   }`}
                 >
                   <Building className="h-4 w-4" />
@@ -171,10 +197,10 @@ export default function PayrollProfilesPage() {
                     setSearchInput('')
                     setSearch('')
                   }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded-md transition-colors ${
                     selectedView === "employees"
-                      ? "bg-slate-700 text-white"
-                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                         ? "bg-slate-700 text-white"
+                      : "text-slate-600 hover:bg-slate-200 hover:text-slate-400"
                   }`}
                 >
                   <Users className="h-4 w-4" />
@@ -247,34 +273,6 @@ export default function PayrollProfilesPage() {
           />
         </div>
       )}
-
-      <Card className="border-blue-200 bg-blue-50">
-        <CardHeader>
-          <CardTitle className="text-blue-900">Usage Instructions</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-blue-800">
-          <div>
-            <h4 className="font-semibold">1. Create Employers First</h4>
-            <p className="text-sm">
-              Add company records with reviewer email addresses for payroll notifications.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-semibold">2. Add Employees</h4>
-            <p className="text-sm">
-              Create employee records and associate them with employers. Include banking details and
-              MOL IDs as needed.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-semibold">3. Use Generated UUIDs</h4>
-            <p className="text-sm">
-              Copy the generated UUIDs from these records to use in your payroll import files for
-              consistent data linking.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
 
       <EmployeeImportDialog
         open={importDialogOpen}

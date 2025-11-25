@@ -193,7 +193,7 @@ export default function PayslipGenerateFlow({ rows, selected, onBack, onDone }: 
 
   return (
     <div className="space-y-4">
-      <p className="text-cyan-600 text-sm">Generate payslips for <strong>{selected.size}</strong> selected employees.</p>
+      <p className="text-green-600 text-xs">Generate payslips for <strong>{selected.size}</strong> selected employees.</p>
       
       <div className="flex gap-2">
         <Button onClick={() => handleGenerate()} disabled={isLoading || isValidating}>

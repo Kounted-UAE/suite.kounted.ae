@@ -194,7 +194,7 @@ export function PayslipEmailFlow({
           <DialogHeader>
             <DialogTitle>Confirm Payslip Emails</DialogTitle>
           </DialogHeader>
-          <div className="text-sm text-cyan-600 space-y-2 max-h-[300px] overflow-auto">
+          <div className="text-xs text-green-600 space-y-2 max-h-[300px] overflow-auto">
             {selectedRows.map(r => {
               const to =
                 sendMode === 'test' ? 'payroll@kounted.ae' :
@@ -227,7 +227,7 @@ export function PayslipEmailFlow({
         </DialogContent>
       </Dialog>
 
-      <p className="text-cyan-600 text-sm">
+      <p className="text-green-600 text-xs">
         Send payslips for <strong>{selectedRows.length}</strong> selected employees.
       </p>
       

@@ -162,8 +162,6 @@ export function BulkImportExportDialog<T extends Record<string, any>>({
     let rows = validationResults.valid
 
     try {
-      // Remove the transform here since it was already applied in handleFileChange
-      // Clean up internal properties before insertion
       const cleanRows = rows.map(row => {
         const { __index, ...cleanRow } = row as any
         return cleanRow

@@ -679,7 +679,7 @@ export function PayslipFiltersAndTable({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="text-sm text-slate-600 font-bold">
+          <div className="text-xs font-semibold text-green-600">
             Showing {rows.length} result{rows.length !== 1 && 's'} of {total} records
             {selectedInFiltered > 0 && (
               <span className="ml-2">

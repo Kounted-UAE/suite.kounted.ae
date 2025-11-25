@@ -280,7 +280,7 @@ export default function EmployerList({
   return (
     <div className="space-y-4">
       <ActionToolbar align="between">
-        <div className="text-sm font-semibold text-slate-600">
+        <div className="text-xs font-semibold text-green-600">
           Showing {sorted.length} of {employers.length} employer{employers.length !== 1 ? 's' : ''}
           {selected.size > 0 && (
             <span className="ml-2">• {selected.size} selected</span>

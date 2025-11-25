@@ -367,7 +367,7 @@ export default function EmployeeImportDialog({ open, onOpenChange, onSuccess }: 
               <div className="rounded-lg border border-slate-200">
                 <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
                   <h4 className="font-semibold text-slate-900">Data Preview</h4>
-                  <p className="text-sm text-slate-600 mt-1">
+                  <p className="text-xs font-semibold text-green-600 mt-1">
                     Showing first {Math.min(5, cleanRows.length)} rows
                   </p>
                 </div>
