@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const body = await request.json().catch(() => ({}))
     const ids = Array.isArray(body?.ids) ? body.ids : []
 

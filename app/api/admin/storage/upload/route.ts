@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     
     // Convert File to ArrayBuffer, then to Buffer for Node.js environment
     const arrayBuffer = await file.arrayBuffer()

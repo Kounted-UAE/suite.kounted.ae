@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     
     const { data, error } = await supabase.storage.listBuckets()
     

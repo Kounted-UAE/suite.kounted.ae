@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 
 export async function GET(req: NextRequest) {
   const res = new NextResponse()
-  const supabase = getSupabaseServerClientFromRequest(req, res)
+  const supabase = await getSupabaseServerClientFromRequest(req)
 
   const code = req.nextUrl.searchParams.get('code')
   const stateRaw = req.nextUrl.searchParams.get('state')

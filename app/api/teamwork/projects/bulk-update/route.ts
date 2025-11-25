@@ -15,7 +15,7 @@ interface BulkUpdateItem {
 export async function POST(req: NextRequest) {
   try {
     const res = new NextResponse()
-    const supabase = getSupabaseServerClientFromRequest(req, res)
+    const supabase = await getSupabaseServerClientFromRequest(req)
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {

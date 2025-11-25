@@ -19,8 +19,8 @@ export type { VAuthenticatedProfile }
  * User-level Supabase client that respects RLS policies based on authenticated user
  * Use this for all user-initiated actions
  */
-export function getSupabaseServerClient() {
-  const cookieStore = cookies()
+export async function getSupabaseServerClient() {
+  const cookieStore = await cookies()
 
   return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
@@ -66,7 +66,7 @@ export const getSupabaseServiceClient = getSupabaseServerClient
  * Returns both the client and the authenticated user's profile
  */
 export async function getSupabaseWithUser() {
-  const supabase = getSupabaseServerClient()
+  const supabase = await getSupabaseServerClient()
   
   const {
     data: { user },
@@ -94,6 +94,6 @@ export async function getSupabaseWithUser() {
 /**
  * Request-aware client (for middleware and edge runtime)
  */
-export function getSupabaseServerClientFromRequest(_req: NextRequest) {
-  return getSupabaseServerClient()
+export async function getSupabaseServerClientFromRequest(_req: NextRequest) {
+  return await getSupabaseServerClient()
 }

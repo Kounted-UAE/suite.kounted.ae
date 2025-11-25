@@ -13,7 +13,7 @@ export async function GET(
 ) {
   try {
     const res = new NextResponse()
-    const supabase = getSupabaseServerClientFromRequest(req, res)
+    const supabase = await getSupabaseServerClientFromRequest(req)
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
@@ -41,7 +41,7 @@ export async function PUT(
 ) {
   try {
     const res = new NextResponse()
-    const supabase = getSupabaseServerClientFromRequest(req, res)
+    const supabase = await getSupabaseServerClientFromRequest(req)
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {

@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 export async function POST(req: NextRequest) {
   try {
     console.log('Starting payslip import API...')
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     
     const { rows } = await req.json().catch(() => ({ rows: [] }))
     

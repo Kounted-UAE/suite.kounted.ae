@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const res = new NextResponse()
 
   try {
-    const supabase = getSupabaseServerClientFromRequest(req, res)
+    const supabase = await getSupabaseServerClientFromRequest(req)
 
     const stateRaw = req.nextUrl.searchParams.get('state')
     const state = stateRaw ? JSON.parse(decodeURIComponent(stateRaw)) : null

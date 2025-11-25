@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const { combinations } = await request.json()
 
     if (!Array.isArray(combinations) || combinations.length === 0) {

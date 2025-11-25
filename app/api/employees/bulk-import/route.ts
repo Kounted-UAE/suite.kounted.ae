@@ -15,7 +15,7 @@ interface EmployeeImportData {
 
 export async function POST(req: Request) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const body = await req.json()
     
     if (!body.employees || !Array.isArray(body.employees)) {

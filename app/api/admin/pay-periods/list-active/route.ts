@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 export async function GET(request: Request) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
 
     // Get unique pay periods from the payroll_excel_imports table
     // Group by pay_period_to and aggregate information

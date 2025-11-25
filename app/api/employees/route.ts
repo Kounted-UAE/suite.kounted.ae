@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 
 export async function GET() {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const { data, error } = await supabase
       .from('employees')
       .select(`
@@ -28,7 +28,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const body = await req.json()
     
     // Validate required fields

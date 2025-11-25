@@ -325,7 +325,7 @@ export default function UsersManagementPage() {
                           <SelectValue placeholder="Select role" />
                         )}
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className=" bg-white">
                         <SelectItem value="kounted-superadmin">Super Admin</SelectItem>
                         <SelectItem value="kounted-admin">Admin</SelectItem>
                         <SelectItem value="kounted-staff">Staff</SelectItem>
@@ -401,7 +401,7 @@ export default function UsersManagementPage() {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className=" bg-white">
                   <SelectItem value="kounted-superadmin">Super Admin</SelectItem>
                   <SelectItem value="kounted-admin">Admin</SelectItem>
                   <SelectItem value="kounted-staff">Staff</SelectItem>

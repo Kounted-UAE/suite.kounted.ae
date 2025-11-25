@@ -30,7 +30,7 @@ function coerceValue(key: string, value: any) {
 
 export async function PATCH(request: Request) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const { id, changes } = await request.json().catch(() => ({ id: null, changes: {} }))
 
     if (!id || typeof changes !== 'object') {

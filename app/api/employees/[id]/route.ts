@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const { data, error } = await supabase
       .from('employees')
       .select(`
@@ -35,7 +35,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const body = await req.json()
     
     // Validate required fields if they are being updated
@@ -106,7 +106,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     
     // Check if employee has associated payroll records
     const { data: payrollRecords, error: payrollError } = await supabase

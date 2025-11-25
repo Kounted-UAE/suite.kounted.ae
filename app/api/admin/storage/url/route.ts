@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     
     // Check if bucket is public
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets()

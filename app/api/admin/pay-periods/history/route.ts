@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 export async function GET(request: Request) {
   try {
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     const { searchParams } = new URL(request.url)
 
     const limit = Number(searchParams.get('limit') || '50')

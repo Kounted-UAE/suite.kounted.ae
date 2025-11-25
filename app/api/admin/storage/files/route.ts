@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabaseServiceClient()
+    const supabase = await getSupabaseServiceClient()
     
     const { data, error } = await supabase.storage
       .from(bucketName)

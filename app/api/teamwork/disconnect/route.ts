@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   const res = new NextResponse()
-  const supabase = getSupabaseServerClientFromRequest(req, res)
+  const supabase = await getSupabaseServerClientFromRequest(req)
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
