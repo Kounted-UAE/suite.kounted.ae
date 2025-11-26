@@ -90,23 +90,94 @@ export async function PATCH(
     const body = await req.json()
     const adminClient = getSupabaseAdminClient()
 
-    // Update user profile
-    const { error: updateError } = await adminClient
-      .from('public_user_profiles')
-      .update({
-        full_name: body.full_name,
-        role_slug: body.role_slug,
-        is_active: body.is_active,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', params.id)
+    // Build update object with only provided fields
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    }
 
-    if (updateError) {
-      console.error('Error updating profile:', updateError)
+    // Only include fields that are explicitly provided (not undefined)
+    if (body.full_name !== undefined) {
+      updateData.full_name = body.full_name
+    }
+    if (body.role_slug !== undefined) {
+      updateData.role_slug = body.role_slug
+    }
+    if (body.is_active !== undefined) {
+      updateData.is_active = body.is_active
+    }
+
+    // Handle email update separately (requires auth admin API)
+    const hasEmailUpdate = body.email !== undefined
+
+    // Check if we have any fields to update
+    const hasProfileUpdate = Object.keys(updateData).length > 1 // More than just updated_at
+    if (!hasProfileUpdate && !hasEmailUpdate) {
       return NextResponse.json(
-        { error: 'Failed to update user' },
-        { status: 500 }
+        { error: 'No valid fields provided for update' },
+        { status: 400 }
       )
+    }
+
+    // Update email if provided
+    if (hasEmailUpdate) {
+      const { error: emailError } = await adminClient.auth.admin.updateUserById(
+        params.id,
+        { email: body.email }
+      )
+
+      if (emailError) {
+        console.error('Error updating email:', {
+          error: emailError,
+          userId: params.id,
+          newEmail: body.email,
+          message: emailError.message,
+        })
+        return NextResponse.json(
+          { 
+            error: 'Failed to update email',
+            details: emailError.message || 'Auth update failed'
+          },
+          { status: 500 }
+        )
+      }
+
+      // Also update email in profile table
+      updateData.email = body.email
+    }
+
+    // Update user profile if there are profile fields to update
+    if (hasProfileUpdate || hasEmailUpdate) {
+      const { error: updateError, data: updatedRows } = await adminClient
+        .from('public_user_profiles')
+        .update(updateData)
+        .eq('id', params.id)
+        .select()
+
+      if (updateError) {
+        console.error('Error updating profile:', {
+          error: updateError,
+          userId: params.id,
+          updateData,
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+        })
+        return NextResponse.json(
+          { 
+            error: 'Failed to update user',
+            details: updateError.message || 'Database update failed'
+          },
+          { status: 500 }
+        )
+      }
+
+      // Log if no rows were updated (user might not exist in profile table)
+      if (!updatedRows || updatedRows.length === 0) {
+        console.warn('No rows updated for user:', {
+          userId: params.id,
+          updateData,
+        })
+      }
     }
 
     return NextResponse.json({
@@ -115,9 +186,17 @@ export async function PATCH(
     })
     
   } catch (error) {
-    console.error('Error in update user API:', error)
+    console.error('Error in update user API:', {
+      error,
+      userId: params.id,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'An unexpected error occurred'
+      },
       { status: 500 }
     )
   }

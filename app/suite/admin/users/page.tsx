@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/react-ui/table'
-import { AlertCircle, UserPlus, Search, Loader2, RefreshCw } from 'lucide-react'
+import { AlertCircle, UserPlus, Search, Loader2, RefreshCw, Edit2, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 export const dynamic = 'force-dynamic'
@@ -66,6 +66,21 @@ export default function UsersManagementPage() {
 
   // Track which user's role is being updated
   const [updatingRoleForUser, setUpdatingRoleForUser] = useState<string | null>(null)
+
+  // Inline name editing state
+  const [editingNameForUser, setEditingNameForUser] = useState<string | null>(null)
+  const [editingNameValue, setEditingNameValue] = useState('')
+  const [updatingName, setUpdatingName] = useState(false)
+
+  // Edit user dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [editEmail, setEditEmail] = useState('')
+  const [editEmailConfirm, setEditEmailConfirm] = useState('')
+  const [editFullName, setEditFullName] = useState('')
+  const [editRole, setEditRole] = useState('')
+  const [editIsActive, setEditIsActive] = useState(true)
+  const [updatingUser, setUpdatingUser] = useState(false)
 
   // Check permissions
   useEffect(() => {
@@ -237,6 +252,137 @@ export default function UsersManagementPage() {
     }
   }
 
+  const handleStartEditName = (user: User) => {
+    setEditingNameForUser(user.id)
+    setEditingNameValue(user.profile?.full_name || '')
+  }
+
+  const handleCancelEditName = () => {
+    setEditingNameForUser(null)
+    setEditingNameValue('')
+  }
+
+  const handleSaveName = async (userId: string) => {
+    setUpdatingName(true)
+    const toastId = toast.loading('Updating name...')
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name: editingNameValue || null }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update name')
+      }
+
+      // Update local state
+      setUsers(users.map(user =>
+        user.id === userId
+          ? {
+              ...user,
+              profile: user.profile ? { ...user.profile, full_name: editingNameValue || null } : null,
+            }
+          : user
+      ))
+
+      toast.success('Name updated successfully', { id: toastId })
+      setEditingNameForUser(null)
+      setEditingNameValue('')
+    } catch (err) {
+      console.error('Error updating name:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to update name', { id: toastId })
+      await fetchUsers()
+    } finally {
+      setUpdatingName(false)
+    }
+  }
+
+  const handleOpenEditDialog = (user: User) => {
+    setEditingUser(user)
+    setEditEmail(user.email)
+    setEditEmailConfirm(user.email)
+    setEditFullName(user.profile?.full_name || '')
+    setEditRole(user.profile?.role_slug || 'kounted-staff')
+    setEditIsActive(user.profile?.is_active ?? true)
+    setEditDialogOpen(true)
+  }
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false)
+    setEditingUser(null)
+    setEditEmail('')
+    setEditEmailConfirm('')
+    setEditFullName('')
+    setEditRole('kounted-staff')
+    setEditIsActive(true)
+  }
+
+  const handleSaveUser = async () => {
+    if (!editingUser) return
+
+    // Validate email if changed
+    if (editEmail !== editingUser.email) {
+      if (editEmail !== editEmailConfirm) {
+        toast.error('Email addresses do not match')
+        return
+      }
+      if (!editEmail || !editEmail.includes('@')) {
+        toast.error('Please enter a valid email address')
+        return
+      }
+    }
+
+    setUpdatingUser(true)
+    const toastId = toast.loading('Updating user...')
+
+    try {
+      const updateBody: Record<string, any> = {}
+
+      // Only include fields that changed
+      if (editFullName !== (editingUser.profile?.full_name || '')) {
+        updateBody.full_name = editFullName || null
+      }
+      if (editRole !== (editingUser.profile?.role_slug || '')) {
+        updateBody.role_slug = editRole
+      }
+      if (editIsActive !== (editingUser.profile?.is_active ?? true)) {
+        updateBody.is_active = editIsActive
+      }
+      if (editEmail !== editingUser.email) {
+        updateBody.email = editEmail
+      }
+
+      if (Object.keys(updateBody).length === 0) {
+        toast.info('No changes to save', { id: toastId })
+        handleCloseEditDialog()
+        return
+      }
+
+      const response = await fetch(`/api/admin/users/${editingUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateBody),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update user')
+      }
+
+      toast.success('User updated successfully', { id: toastId })
+      handleCloseEditDialog()
+      await fetchUsers()
+    } catch (err) {
+      console.error('Error updating user:', err)
+      toast.error(err instanceof Error ? err.message : 'Failed to update user', { id: toastId })
+    } finally {
+      setUpdatingUser(false)
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -287,6 +433,15 @@ export default function UsersManagementPage() {
 
       <div className="bg-white rounded-lg border">
         <Table>
+          <colgroup>
+            <col className="w-[200px]" />
+            <col className="w-[200px]" />
+            <col className="w-[180px]" />
+            <col className="w-[100px]" />
+            <col className="w-[120px]" />
+            <col className="w-[120px]" />
+            <col className="w-[100px]" />
+          </colgroup>
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
@@ -295,20 +450,69 @@ export default function UsersManagementPage() {
               <TableHead>Status</TableHead>
               <TableHead>Last Sign In</TableHead>
               <TableHead>Created</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-neutral-500">
+                <TableCell colSpan={7} className="text-center py-8 text-neutral-500">
                   {searchTerm ? 'No users match your search' : 'No users found'}
                 </TableCell>
               </TableRow>
             ) : (
               filteredUsers.map((user) => (
-                <TableRow key={user.id}>
+                <TableRow key={user.id} className="group">
                   <TableCell className="font-medium">{user.email}</TableCell>
-                  <TableCell>{user.profile?.full_name || '-'}</TableCell>
+                  <TableCell>
+                    {editingNameForUser === user.id ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editingNameValue}
+                          onChange={(e) => setEditingNameValue(e.target.value)}
+                          className="h-8 w-[200px]"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveName(user.id)
+                            } else if (e.key === 'Escape') {
+                              handleCancelEditName()
+                            }
+                          }}
+                          autoFocus
+                          disabled={updatingName}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleSaveName(user.id)}
+                          disabled={updatingName}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Check className="h-4 w-4 text-green-600" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleCancelEditName}
+                          disabled={updatingName}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="min-w-[100px]">{user.profile?.full_name || '-'}</span>
+                        <button
+                          onClick={() => handleStartEditName(user)}
+                          className="opacity-60 hover:opacity-100 hover:text-blue-600 transition-opacity"
+                          title="Edit name"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Select
                       value={user.profile?.role_slug || ''}
@@ -354,6 +558,17 @@ export default function UsersManagementPage() {
                   </TableCell>
                   <TableCell>
                     {new Date(user.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenEditDialog(user)}
+                      className="h-8"
+                    >
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -431,6 +646,119 @@ export default function UsersManagementPage() {
                 </>
               ) : (
                 'Send Invitation'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user information. Changes will be saved immediately.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email Address</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                placeholder="user@example.com"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                disabled={updatingUser}
+              />
+            </div>
+
+            {editEmail !== editingUser?.email && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-email-confirm">Confirm Email Address</Label>
+                <Input
+                  id="edit-email-confirm"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={editEmailConfirm}
+                  onChange={(e) => setEditEmailConfirm(e.target.value)}
+                  disabled={updatingUser}
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-fullName">Full Name</Label>
+              <Input
+                id="edit-fullName"
+                type="text"
+                placeholder="John Doe"
+                value={editFullName}
+                onChange={(e) => setEditFullName(e.target.value)}
+                disabled={updatingUser}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-role">Role</Label>
+              <Select value={editRole} onValueChange={setEditRole} disabled={updatingUser}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="kounted-superadmin">Super Admin</SelectItem>
+                  <SelectItem value="kounted-admin">Admin</SelectItem>
+                  <SelectItem value="kounted-staff">Staff</SelectItem>
+                  <SelectItem value="client-admin">Client Admin</SelectItem>
+                  <SelectItem value="client-standard">Client User</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">Status</Label>
+              <Select 
+                value={editIsActive ? 'active' : 'inactive'} 
+                onValueChange={(value) => setEditIsActive(value === 'active')}
+                disabled={updatingUser || (editingUser?.id === profile?.id && editIsActive)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+              {editingUser?.id === profile?.id && editIsActive && (
+                <p className="text-xs text-amber-600 mt-1">
+                  You cannot deactivate your own account
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCloseEditDialog}
+              disabled={updatingUser}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveUser}
+              disabled={updatingUser}
+            >
+              {updatingUser ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
               )}
             </Button>
           </DialogFooter>
